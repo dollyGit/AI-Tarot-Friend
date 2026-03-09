@@ -30,8 +30,47 @@ type Config struct {
 	// OpenTelemetry
 	OTLPEndpoint string
 
+	// MongoDB
+	MongoDB *MongoConfig
+
+	// InfluxDB
+	InfluxDB *InfluxConfig
+
+	// Qdrant (vector)
+	Qdrant *QdrantConfig
+
+	// Neo4j (graph)
+	Neo4j *Neo4jConfig
+
 	// Cache
 	CacheConfig *CacheConfig
+}
+
+// MongoConfig holds MongoDB connection settings.
+type MongoConfig struct {
+	URI      string // e.g. "mongodb://localhost:27017"
+	Database string // e.g. "tarot_docs"
+}
+
+// InfluxConfig holds InfluxDB v2 connection settings.
+type InfluxConfig struct {
+	URL    string // e.g. "http://localhost:8086"
+	Token  string
+	Org    string
+	Bucket string
+}
+
+// QdrantConfig holds Qdrant connection settings.
+type QdrantConfig struct {
+	Addr   string // e.g. "localhost:6334" (gRPC port)
+	APIKey string // optional
+}
+
+// Neo4jConfig holds Neo4j connection settings.
+type Neo4jConfig struct {
+	URI      string // e.g. "bolt://localhost:7687"
+	Username string
+	Password string
 }
 
 // DBConfig holds a single database pool configuration.
@@ -89,6 +128,33 @@ func Load() (*Config, error) {
 		KafkaBrokers: splitEnv("KAFKA_BROKERS", "localhost:9092"),
 
 		OTLPEndpoint: getEnv("OTLP_ENDPOINT", "localhost:4318"),
+
+		// MongoDB (optional — only used when entities route to it)
+		MongoDB: &MongoConfig{
+			URI:      getEnv("MONGO_URI", "mongodb://localhost:27017"),
+			Database: getEnv("MONGO_DB", "tarot_docs"),
+		},
+
+		// InfluxDB (optional)
+		InfluxDB: &InfluxConfig{
+			URL:    getEnv("INFLUX_URL", "http://localhost:8086"),
+			Token:  getEnv("INFLUX_TOKEN", ""),
+			Org:    getEnv("INFLUX_ORG", "tarotfriend"),
+			Bucket: getEnv("INFLUX_BUCKET", "tarot_metrics"),
+		},
+
+		// Qdrant (optional)
+		Qdrant: &QdrantConfig{
+			Addr:   getEnv("QDRANT_ADDR", "localhost:6334"),
+			APIKey: getEnv("QDRANT_API_KEY", ""),
+		},
+
+		// Neo4j (optional)
+		Neo4j: &Neo4jConfig{
+			URI:      getEnv("NEO4J_URI", "bolt://localhost:7687"),
+			Username: getEnv("NEO4J_USER", "neo4j"),
+			Password: getEnv("NEO4J_PASSWORD", "neo4j"),
+		},
 	}
 
 	// Load cache config

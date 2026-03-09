@@ -104,6 +104,21 @@ message IngestStreamResponse {
   string error = 3;
 }
 
+// ─── Customer View (Cross-Engine Aggregation) ─────────
+
+message CustomerViewRequest {
+  string customer_id = 1;            // UUID of the customer
+}
+
+message CustomerViewResponse {
+  bytes profile = 1;                 // ① PostgreSQL: relational profile
+  bytes behavior_profile = 2;        // ② MongoDB: behavior analysis
+  bytes session_presence = 3;        // ③ Redis: online status
+  bytes engagement_trends = 4;       // ④ InfluxDB: time-series metrics
+  bytes memory_summaries = 5;        // ⑤ Qdrant: vector memory
+  bytes relationship_graph = 6;      // ⑥ Neo4j: graph relationships
+}
+
 // ─── Health Check ──────────────────────────────────────
 
 message CheckRequest {
@@ -135,6 +150,9 @@ service DataAccessService {
 
   // Bidirectional streaming: high-throughput data ingestion
   rpc IngestStream(stream IngestStreamRequest) returns (stream IngestStreamResponse);
+
+  // Cross-engine aggregation: full customer view from all 6 engines
+  rpc GetCustomerView(CustomerViewRequest) returns (CustomerViewResponse);
 
   // Health check
   rpc Check(CheckRequest) returns (CheckResponse);

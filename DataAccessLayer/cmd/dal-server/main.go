@@ -1,6 +1,7 @@
 // Package main — TarotFriend Data Access Layer (gRPC Server)
 //
-// Unified data gateway routing to PostgreSQL databases.
+// Unified polyglot data gateway routing to PostgreSQL, MongoDB,
+// InfluxDB, Qdrant, and Neo4j storage engines.
 // Port: 4000 (gRPC), 4001 (metrics/health HTTP)
 package main
 
@@ -88,12 +89,86 @@ func main() {
 	pipeline := stream.NewPipeline(redisClient, cfg.KafkaBrokers, logger)
 	defer pipeline.Close()
 
-	// Build storage router
-	router := storage.NewRouter(pools)
+	// Build storage router and register per-service PostgresBackends
+	router := storage.NewRouter(pools, logger)
+	for svc := range cfg.Databases {
+		pool, err := pools.Pool(svc)
+		if err != nil {
+			logger.Fatal("failed to get pool for postgres backend", zap.String("service", svc), zap.Error(err))
+		}
+		router.RegisterPostgresBackend(svc, storage.NewPostgresBackend(pool, logger))
+	}
+
+	// ── Initialize non-postgres backends ─────────────────────
+	// MongoDB
+	if cfg.MongoDB != nil {
+		mongoBackend, err := storage.NewMongoBackend(ctx, cfg.MongoDB.URI, cfg.MongoDB.Database, logger)
+		if err != nil {
+			logger.Warn("MongoDB backend unavailable, document entities will fail", zap.Error(err))
+		} else {
+			defer mongoBackend.Close()
+			router.RegisterBackend(storage.EngineMongo, mongoBackend)
+
+			// Register MongoDB entities
+			router.RegisterEntity("customer", "visit_logs", storage.EngineMongo, "visit_logs")
+			router.RegisterEntity("customer", "activity_events", storage.EngineMongo, "activity_events")
+			router.RegisterEntity("customer", "divination_charts", storage.EngineMongo, "divination_charts")
+			router.RegisterEntity("customer", "conversation_raw", storage.EngineMongo, "conversation_raw")
+			router.RegisterEntity("customer", "customer_behavior_profile", storage.EngineMongo, "customer_behavior_profile")
+		}
+	}
+
+	// InfluxDB
+	if cfg.InfluxDB != nil {
+		influxBackend, err := storage.NewInfluxBackend(ctx, cfg.InfluxDB.URL, cfg.InfluxDB.Token, cfg.InfluxDB.Org, cfg.InfluxDB.Bucket, logger)
+		if err != nil {
+			logger.Warn("InfluxDB backend unavailable, timeseries entities will fail", zap.Error(err))
+		} else {
+			defer influxBackend.Close()
+			router.RegisterBackend(storage.EngineInflux, influxBackend)
+
+			// Register InfluxDB entities
+			router.RegisterEntity("customer", "customer_engagement", storage.EngineInflux, "customer_engagement")
+			router.RegisterEntity("customer", "customer_spending", storage.EngineInflux, "customer_spending")
+			router.RegisterEntity("customer", "customer_sentiment", storage.EngineInflux, "customer_sentiment")
+			router.RegisterEntity("customer", "system_session_gauge", storage.EngineInflux, "system_session_gauge")
+		}
+	}
+
+	// Qdrant
+	if cfg.Qdrant != nil {
+		qdrantBackend, err := storage.NewQdrantBackend(ctx, cfg.Qdrant.Addr, logger)
+		if err != nil {
+			logger.Warn("Qdrant backend unavailable, vector entities will fail", zap.Error(err))
+		} else {
+			defer qdrantBackend.Close()
+			router.RegisterBackend(storage.EngineQdrant, qdrantBackend)
+
+			// Register Qdrant entities
+			router.RegisterEntity("customer", "conversation_summaries", storage.EngineQdrant, "conversation-summaries")
+			router.RegisterEntity("customer", "long_term_memory", storage.EngineQdrant, "long-term-memory")
+		}
+	}
+
+	// Neo4j
+	if cfg.Neo4j != nil {
+		neo4jBackend, err := storage.NewNeo4jBackend(ctx, cfg.Neo4j.URI, cfg.Neo4j.Username, cfg.Neo4j.Password, logger)
+		if err != nil {
+			logger.Warn("Neo4j backend unavailable, graph entities will fail", zap.Error(err))
+		} else {
+			defer neo4jBackend.Close()
+			router.RegisterBackend(storage.EngineNeo4j, neo4jBackend)
+
+			// Register Neo4j entities
+			router.RegisterEntity("customer", "relationship_graph", storage.EngineNeo4j, "Customer")
+			router.RegisterEntity("customer", "knowledge_graph", storage.EngineNeo4j, "Topic")
+		}
+	}
 
 	// Build service layer
 	queryService := service.NewQueryService(router, cacheManager, logger)
 	writeService := service.NewWriteService(router, cacheManager, logger)
+	customerViewService := service.NewCustomerViewService(router, cacheManager, queryService, logger)
 
 	// Build gRPC server with middleware chain
 	grpcServer := grpc.NewServer(
@@ -126,9 +201,40 @@ func main() {
 	metricsAddr := fmt.Sprintf(":%s", cfg.MetricsPort)
 	httpMux := http.NewServeMux()
 	httpMux.Handle("/metrics", promhttp.Handler())
+
+	// ── GetCustomerView REST endpoint (P3.5) ─────────────
+	// Exposes the cross-engine aggregation as HTTP since proto stubs aren't
+	// regenerated yet. Will be served via gRPC once protoc runs.
+	httpMux.HandleFunc("GET /api/v1/customers/{id}/view", func(w http.ResponseWriter, r *http.Request) {
+		customerID := r.PathValue("id")
+		if customerID == "" {
+			http.Error(w, `{"error":"customer_id is required"}`, http.StatusBadRequest)
+			return
+		}
+
+		view, err := customerViewService.GetFullView(r.Context(), customerID)
+		if err != nil {
+			logger.Error("GetFullView failed", zap.String("customer_id", customerID), zap.Error(err))
+			http.Error(w, fmt.Sprintf(`{"error":"%s"}`, err.Error()), http.StatusInternalServerError)
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(view)
+	})
+
 	httpMux.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
 		details := pools.HealthCheck(r.Context())
 		details["redis"] = cacheManager.HealthCheck(r.Context())
+
+		// Check non-postgres backends
+		for engine, backend := range router.Backends() {
+			if err := backend.Ping(r.Context()); err != nil {
+				details[string(engine)] = fmt.Sprintf("unhealthy: %v", err)
+			} else {
+				details[string(engine)] = "healthy"
+			}
+		}
 
 		healthy := true
 		for _, v := range details {
