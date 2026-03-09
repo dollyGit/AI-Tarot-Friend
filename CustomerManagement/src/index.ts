@@ -11,6 +11,17 @@ import { checkDatabaseConnection, disconnectDatabase } from './lib/prisma.js';
 import { cache } from './lib/cache.js';
 import { errorHandler, notFoundHandler } from './api/middleware/error-handler.js';
 import { createHealthCheck } from '@tarotfriend/shared';
+import { rateLimiters } from './api/middleware/rate-limit.js';
+import { customersRouter } from './api/routes/customers.js';
+import { contactsRouter } from './api/routes/contacts.js';
+import { birthChartsRouter } from './api/routes/birth-charts.js';
+import { financeRouter } from './api/routes/finance.js';
+import { complianceRouter } from './api/routes/compliance.js';
+import { tagsRouter, customerTagRouter } from './api/routes/tags.js';
+import { addressesRouter } from './api/routes/addresses.js';
+import { sessionsRouter } from './api/routes/sessions.js';
+import { internalRouter } from './api/routes/internal.js';
+import { eventProducer } from './lib/kafka-producer.js';
 
 const app = express();
 const startedAt = new Date();
@@ -74,8 +85,16 @@ app.get('/metrics', (_req, res) => {
 });
 
 // ── API Routes ───────────────────────────────────────────
-// import { someRouter } from './api/some-resource.js';
-// app.use('/api/v1/some-resource', someRouter);
+app.use('/api/v1/customers', rateLimiters.api, customersRouter);
+app.use('/api/v1/customers/:id/contacts', rateLimiters.api, contactsRouter);
+app.use('/api/v1/customers/:id/birth-charts', rateLimiters.api, birthChartsRouter);
+app.use('/api/v1/customers/:id/finance-records', rateLimiters.api, financeRouter);
+app.use('/api/v1/customers/:id', rateLimiters.api, complianceRouter);  // /consents, /notes
+app.use('/api/v1/customers/:id/tags', rateLimiters.api, customerTagRouter);
+app.use('/api/v1/customers/:id/addresses', rateLimiters.api, addressesRouter);
+app.use('/api/v1/tags', rateLimiters.api, tagsRouter);                // Global tag CRUD
+app.use('/api/v1/auth/sessions', rateLimiters.auth, sessionsRouter);
+app.use('/internal/v1', internalRouter);
 
 // ── Error Handlers ───────────────────────────────────────
 app.use(notFoundHandler);
@@ -85,6 +104,7 @@ app.use(errorHandler);
 const gracefulShutdown = async (signal: string) => {
   logger.info({ signal }, 'Received shutdown signal');
   try {
+    await eventProducer.disconnect();
     await disconnectDatabase();
     await cache.close();
     logger.info('Graceful shutdown completed');

@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@prisma/client": "^5.8.1",
-    "@tarotfriend/shared": "workspace:*",
+    "@tarotfriend/shared": "file:../packages/shared",
     "cors": "^2.8.5",
     "express": "^4.18.2",
     "ioredis": "^5.3.2",
@@ -27,6 +27,7 @@
     "kafkajs": "^2.2.4",
     "pino": "^8.17.2",
     "pino-pretty": "^10.3.1",
+    "uuid": "^9.0.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
@@ -34,6 +35,8 @@
     "@types/express": "^4.17.21",
     "@types/jsonwebtoken": "^9.0.5",
     "@types/node": "^20.11.5",
+    "@types/supertest": "^6.0.2",
+    "@types/uuid": "^9.0.7",
     "@vitest/coverage-v8": "^1.2.2",
     "eslint": "^8.56.0",
     "prisma": "^5.8.1",
