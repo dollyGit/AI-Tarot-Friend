@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+package dal.v1;
+
+option go_package = "dal/v1;dalv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ─── Tarotist ──────────────────────────────────────────
+
+message Tarotist {
+  string id = 1;
+  string name = 2;
+  string bio = 3;
+  string avatar_url = 4;
+  repeated string specialties = 5;   // ["love", "career", "spiritual"]
+  double rating = 6;                 // 0.0 - 5.0
+  int32 total_reviews = 7;
+  string hourly_rate = 8;           // Decimal as string
+  string currency = 9;              // "TWD"
+  string status = 10;               // "active" | "inactive" | "suspended"
+  google.protobuf.Timestamp created_at = 20;
+}
+
+// ─── Availability ──────────────────────────────────────
+
+message Availability {
+  string id = 1;
+  string tarotist_id = 2;
+  int32 day_of_week = 3;            // 0=Sunday, 6=Saturday
+  string start_time = 4;            // "09:00"
+  string end_time = 5;              // "17:00"
+  bool is_recurring = 6;
+  string specific_date = 7;         // "2025-03-15" for one-off slots
+  bool is_available = 8;
+}
+
+// ─── Appointment ───────────────────────────────────────
+
+message Appointment {
+  string id = 1;
+  string customer_id = 2;
+  string tarotist_id = 3;
+  google.protobuf.Timestamp start_at = 4;
+  google.protobuf.Timestamp end_at = 5;
+  string type = 6;                   // "online" | "in_person"
+  string status = 7;                // "pending" | "confirmed" | "completed" | "cancelled" | "no_show"
+  string topic = 8;
+  string meeting_url = 9;
+  string notes = 10;
+  google.protobuf.Timestamp created_at = 20;
+}
+
+// ─── Review ────────────────────────────────────────────
+
+message Review {
+  string id = 1;
+  string appointment_id = 2;
+  string customer_id = 3;
+  string tarotist_id = 4;
+  int32 rating = 5;                  // 1-5
+  string comment = 6;
+  google.protobuf.Timestamp created_at = 10;
+}

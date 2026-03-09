@@ -1,0 +1,499 @@
+openapi: 3.0.3
+info:
+  title: AI Tarot Friend API
+  description: REST API for empathetic tarot reading platform with memory and proactive care
+  version: 1.0.0
+  contact:
+    name: AI Tarot Friend Team
+
+servers:
+  - url: https://api.aitarotfriend.com/v1
+    description: Production
+  - url: https://staging-api.aitarotfriend.com/v1
+    description: Staging
+  - url: http://localhost:3000/v1
+    description: Local Development
+
+security:
+  - BearerAuth: []
+
+paths:
+  # Reading Endpoints
+  /readings:
+    post:
+      summary: Create a new tarot reading
+      description: Draw cards for a spread and generate interpretation
+      tags: [Readings]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [spread_type]
+              properties:
+                spread_type:
+                  type: string
+                  enum: ['1-card', '3-card', '7-card', 'celtic-cross']
+                seed:
+                  type: string
+                  description: Optional seed for reproducibility (premium only)
+                context:
+                  type: string
+                  description: User's question or concern
+      responses:
+        '201':
+          description: Reading created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReadingResponse'
+        '429':
+          $ref: '#/components/responses/QuotaExceeded'
+        '403':
+          $ref: '#/components/responses/PremiumRequired'
+
+    get:
+      summary: Get reading history
+      description: List past readings for authenticated user
+      tags: [Readings]
+      parameters:
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Reading list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Reading'
+                  pagination:
+                    $ref: '#/components/schemas/Pagination'
+
+  /readings/{reading_id}:
+    get:
+      summary: Get specific reading details
+      tags: [Readings]
+      parameters:
+        - name: reading_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Reading details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Reading'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Session Endpoints
+  /sessions:
+    post:
+      summary: Start new conversation session
+      tags: [Sessions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [channel]
+              properties:
+                channel:
+                  type: string
+                  enum: [web, mobile, line]
+      responses:
+        '201':
+          description: Session created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Session'
+
+  /sessions/{session_id}/messages:
+    post:
+      summary: Send message in session
+      tags: [Sessions]
+      parameters:
+        - name: session_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [content]
+              properties:
+                content:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        '200':
+          description: Message received and processed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sentiment:
+                    $ref: '#/components/schemas/Sentiment'
+                  suggested_spread:
+                    type: string
+                  crisis_detected:
+                    type: boolean
+                  crisis_resources:
+                    type: object
+
+  # User Endpoints
+  /users/me:
+    get:
+      summary: Get current user profile
+      tags: [Users]
+      responses:
+        '200':
+          description: User profile
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+
+  /users/me/subscription:
+    get:
+      summary: Get current subscription status
+      tags: [Users]
+      responses:
+        '200':
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+  /users/me/quota:
+    get:
+      summary: Check daily quota usage
+      tags: [Users]
+      responses:
+        '200':
+          description: Quota status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  plan:
+                    type: string
+                  limits:
+                    type: object
+                    properties:
+                      single_card_daily:
+                        type: integer
+                      three_card_daily:
+                        type: integer
+                      seven_card_daily:
+                        type: integer
+                  used_today:
+                    type: object
+                  resets_at:
+                    type: string
+                    format: date-time
+
+  /users/me/export:
+    post:
+      summary: Request data export (GDPR)
+      tags: [Users]
+      responses:
+        '202':
+          description: Export queued
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  export_id:
+                    type: string
+                  estimated_completion:
+                    type: string
+                    format: date-time
+
+  # Subscription Endpoints
+  /subscriptions:
+    post:
+      summary: Create subscription (web payment)
+      tags: [Subscriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [plan_id, payment_method_id]
+              properties:
+                plan_id:
+                  type: string
+                  enum: [premium-monthly, premium-yearly]
+                payment_method_id:
+                  type: string
+      responses:
+        '201':
+          description: Subscription created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscription_id:
+                    type: string
+                  client_secret:
+                    type: string
+                  status:
+                    type: string
+
+  /subscriptions/verify-iap:
+    post:
+      summary: Verify in-app purchase (iOS/Android)
+      tags: [Subscriptions]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [platform, receipt]
+              properties:
+                platform:
+                  type: string
+                  enum: [ios, android]
+                receipt:
+                  type: string
+                  description: Base64-encoded receipt (iOS) or purchase token (Android)
+      responses:
+        '200':
+          description: Receipt verified
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscription'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    ReadingResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        spread_type:
+          type: string
+        cards:
+          type: array
+          items:
+            $ref: '#/components/schemas/DrawnCard'
+        interpretation:
+          $ref: '#/components/schemas/Interpretation'
+        created_at:
+          type: string
+          format: date-time
+
+    Reading:
+      allOf:
+        - $ref: '#/components/schemas/ReadingResponse'
+        - type: object
+          properties:
+            session_id:
+              type: string
+              format: uuid
+            token_count:
+              type: integer
+
+    DrawnCard:
+      type: object
+      properties:
+        card_id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: integer
+        orientation:
+          type: string
+          enum: [upright, reversed]
+        meaning:
+          type: string
+
+    Interpretation:
+      type: object
+      properties:
+        tldr:
+          type: string
+        key_points:
+          type: array
+          items:
+            type: string
+          minItems: 3
+          maxItems: 5
+        advice:
+          type: object
+          properties:
+            short_term:
+              type: string
+            medium_term:
+              type: string
+            long_term:
+              type: string
+        warnings:
+          type: string
+
+    Session:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        sentiment:
+          $ref: '#/components/schemas/Sentiment'
+
+    Sentiment:
+      type: object
+      properties:
+        score:
+          type: number
+          format: float
+          minimum: -1
+          maximum: 1
+        label:
+          type: string
+          enum: [negative, neutral, positive]
+        confidence:
+          type: number
+          format: float
+        crisis_level:
+          type: string
+          enum: [none, moderate, high, immediate]
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        display_name:
+          type: string
+        locale:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+
+    Subscription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        plan_id:
+          type: string
+        platform:
+          type: string
+        status:
+          type: string
+        start_at:
+          type: string
+          format: date-time
+        end_at:
+          type: string
+          format: date-time
+        auto_renew:
+          type: boolean
+
+    Pagination:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+
+  responses:
+    QuotaExceeded:
+      description: Daily quota exceeded
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: QUOTA_EXCEEDED
+              message: You've reached your daily limit. Upgrade to Premium for unlimited readings.
+
+    PremiumRequired:
+      description: Premium subscription required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: PREMIUM_REQUIRED
+              message: This spread type is available for Premium subscribers only.
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

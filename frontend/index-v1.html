@@ -1,0 +1,1288 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TarotFriend — 你的塔羅摯友</title>
+<meta name="description" content="溫暖療癒的 AI 塔羅對話夥伴，陪你聊感情、職涯、未來的一切困惑">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        // GitKraken Teal Palette - 現代科技風
+        void: '#1B1B1D',      // 主背景（中性深灰）
+        abyss: '#252527',     // 卡片背景（略淺灰）
+        nebula: '#2D2D30',    // Hover 狀態
+        warmth: '#363638',    // 輸入框背景
+        gold: '#00D4AA',      // 主強調色（Teal 青綠）
+        ember: '#4DDFC4',     // 次強調色（亮青綠）
+        orchid: '#7B68EE',    // AI 訊息強調（紫藍）
+        rose: '#00BFA5',      // 情感狀態（深青綠）
+        pale: '#FFFFFF',      // 主要文字（純白）
+        ghost: '#9E9E9E',     // 次要文字（中灰）
+      },
+      fontFamily: {
+        display: ['Cinzel Decorative', 'serif'],
+        sans: ['Noto Sans TC', 'Inter', 'sans-serif'],
+        mono: ['JetBrains Mono', 'monospace'],
+      },
+      animation: {
+        'fade-in': 'fadeIn 0.3s ease-out',
+        'fade-in-up': 'fadeInUp 0.4s ease-out',
+        'pulse-slow': 'pulse 3s ease-in-out infinite',
+        'float': 'float 6s ease-in-out infinite',
+        'typing-1': 'typing 1.4s ease-in-out infinite',
+        'typing-2': 'typing 1.4s ease-in-out 0.2s infinite',
+        'typing-3': 'typing 1.4s ease-in-out 0.4s infinite',
+      },
+      keyframes: {
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        typing: {
+          '0%, 100%': { opacity: '0.3', transform: 'scale(0.8)' },
+          '50%': { opacity: '1', transform: 'scale(1)' },
+        },
+      },
+    },
+  },
+}
+</script>
+
+<style>
+/* Base resets */
+*, *::before, *::after { box-sizing: border-box; }
+body { margin: 0; overflow: hidden; }
+
+/* Scrollbar styling */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7B68EE, #00D4AA);
+  border-radius: 3px;
+}
+
+/* Custom scrollbar for Firefox */
+* { scrollbar-width: thin; scrollbar-color: #7B68EE transparent; }
+
+/* Noise texture overlay */
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.02'/%3E%3C/svg%3E");
+  opacity: 0.3;
+}
+
+/* Emotion gradient backgrounds - GitKraken Teal 版 */
+.emotion-calm { background: radial-gradient(ellipse at center, rgba(0,212,170,0.03) 0%, transparent 70%); }
+.emotion-anxious { background: radial-gradient(ellipse at center, rgba(123,104,238,0.05) 0%, transparent 70%); }
+.emotion-sad { background: radial-gradient(ellipse at center, rgba(123,104,238,0.04) 0%, transparent 70%); }
+.emotion-hopeful { background: radial-gradient(ellipse at center, rgba(77,223,196,0.05) 0%, transparent 70%); }
+
+/* Chat bubble styles - GitKraken Teal 版 */
+.bubble-ai {
+  background: linear-gradient(135deg, #2D2D30, #252527);
+  border-left: 3px solid #7B68EE;
+  border-radius: 4px 20px 20px 20px;
+}
+
+.bubble-user {
+  background: linear-gradient(135deg, #363638, #2D2D30);
+  border-right: 3px solid #00D4AA;
+  border-radius: 20px 4px 20px 20px;
+}
+
+/* Input glow effect - GitKraken Teal 版 */
+.input-glow:focus {
+  box-shadow: 0 0 0 1px #00D4AA, 0 0 20px rgba(0,212,170,0.2);
+}
+
+/* Quick action pill - GitKraken Teal 版 */
+.action-pill {
+  transition: all 0.2s ease-out;
+}
+.action-pill:hover {
+  background: rgba(0,212,170,0.15);
+  transform: translateY(-1px);
+}
+
+/* Sigil animation - GitKraken Teal 版 */
+.sigil-glow {
+  filter: drop-shadow(0 0 20px rgba(0,212,170,0.4));
+}
+
+/* Card flip animation */
+.card-flip {
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.card-flip.flipped { transform: rotateY(180deg); }
+.card-front, .card-back { backface-visibility: hidden; position: absolute; inset: 0; }
+.card-back { transform: rotateY(180deg); }
+
+/* Tarot card spread styles */
+.tarot-spread {
+  display: flex;
+  justify-content: center;
+  gap: 0.5rem;
+  perspective: 1000px;
+  padding: 1rem 0;
+}
+
+.tarot-card {
+  width: 80px;
+  height: 130px;
+  cursor: pointer;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+.tarot-card:hover:not(.selected):not(.disabled) {
+  transform: translateY(-12px) scale(1.05);
+  z-index: 10;
+}
+
+.tarot-card:hover:not(.selected):not(.disabled) .card-inner {
+  box-shadow: 0 15px 40px rgba(0, 212, 170, 0.35);
+}
+
+.tarot-card.disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+
+.tarot-card.selected .card-inner {
+  transform: rotateY(180deg);
+}
+
+.card-inner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+}
+
+.card-front {
+  background: linear-gradient(145deg, #2D2D30, #1B1B1D);
+  border: 2px solid #00D4AA;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.card-front::before {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid rgba(0, 212, 170, 0.3);
+  border-radius: 4px;
+}
+
+.card-front-pattern {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.card-front svg {
+  width: 40px;
+  height: 40px;
+  opacity: 0.7;
+}
+
+.card-back {
+  background: linear-gradient(145deg, #363638, #2D2D30);
+  border: 2px solid #7B68EE;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  text-align: center;
+}
+
+.card-back .card-numeral {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.65rem;
+  color: #00D4AA;
+  margin-bottom: 4px;
+}
+
+.card-back .card-icon {
+  font-size: 1.8rem;
+  margin-bottom: 4px;
+}
+
+.card-back .card-name {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 0.55rem;
+  color: #FFFFFF;
+  line-height: 1.2;
+}
+
+.card-back .card-name-zh {
+  font-size: 0.7rem;
+  color: #4DDFC4;
+  margin-top: 2px;
+}
+
+/* Spread intro animation */
+.tarot-spread .tarot-card {
+  opacity: 0;
+  transform: translateY(30px) rotateZ(-5deg);
+}
+
+.tarot-spread.spread-active .tarot-card {
+  opacity: 1;
+  transform: translateY(0) rotateZ(0);
+}
+
+.tarot-spread.spread-active .tarot-card:nth-child(1) { transition-delay: 0.1s; }
+.tarot-spread.spread-active .tarot-card:nth-child(2) { transition-delay: 0.2s; }
+.tarot-spread.spread-active .tarot-card:nth-child(3) { transition-delay: 0.3s; }
+.tarot-spread.spread-active .tarot-card:nth-child(4) { transition-delay: 0.4s; }
+.tarot-spread.spread-active .tarot-card:nth-child(5) { transition-delay: 0.5s; }
+
+/* Selected card glow */
+.tarot-card.selected {
+  z-index: 20;
+  transform: translateY(-20px) scale(1.1);
+}
+
+.tarot-card.selected .card-inner {
+  box-shadow: 0 20px 50px rgba(0, 212, 170, 0.4), 0 0 30px rgba(123, 104, 238, 0.3);
+}
+
+/* Spread instruction text */
+.spread-instruction {
+  text-align: center;
+  color: #A89B94;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+/* Responsive tarot cards */
+@media (min-width: 640px) {
+  .tarot-card {
+    width: 100px;
+    height: 160px;
+  }
+  .tarot-spread {
+    gap: 1rem;
+  }
+  .card-back .card-numeral { font-size: 0.75rem; }
+  .card-back .card-icon { font-size: 2.2rem; }
+  .card-back .card-name { font-size: 0.65rem; }
+  .card-back .card-name-zh { font-size: 0.85rem; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   全螢幕沉浸式塔羅牌抽牌 Overlay
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Overlay 容器 - GitKraken Teal 版 */
+.tarot-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9998;
+  background: radial-gradient(ellipse at center, #2D2D30 0%, #1B1B1D 70%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  animation: overlayFadeIn 0.6s ease-out forwards;
+}
+
+.tarot-overlay.closing {
+  animation: overlayFadeOut 0.5s ease-out forwards;
+}
+
+@keyframes overlayFadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes overlayFadeOut {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+/* Overlay 標題 */
+.overlay-header {
+  position: absolute;
+  top: 8%;
+  text-align: center;
+  z-index: 10;
+}
+
+.overlay-title {
+  font-family: 'Cinzel Decorative', serif;
+  font-size: 1.75rem;
+  color: #00D4AA;
+  margin-bottom: 0.5rem;
+  text-shadow: 0 0 30px rgba(0, 212, 170, 0.4);
+}
+
+@media (min-width: 640px) {
+  .overlay-title { font-size: 2.25rem; }
+}
+
+.overlay-subtitle {
+  color: #A89B94;
+  font-size: 1rem;
+}
+
+/* 關閉按鈕 - GitKraken Teal 版 */
+.overlay-close {
+  position: absolute;
+  top: 1.5rem;
+  right: 1.5rem;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(123, 104, 238, 0.1);
+  border: 1px solid rgba(123, 104, 238, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s;
+  z-index: 20;
+}
+
+.overlay-close:hover {
+  background: rgba(123, 104, 238, 0.25);
+  box-shadow: 0 0 20px rgba(0, 212, 170, 0.4);
+}
+
+/* 洗牌動畫容器 */
+.shuffle-container {
+  position: relative;
+  width: 100px;
+  height: 160px;
+  perspective: 1000px;
+}
+
+@media (min-width: 640px) {
+  .shuffle-container {
+    width: 120px;
+    height: 190px;
+  }
+}
+
+/* 洗牌中的牌卡 - GitKraken Teal 版 */
+.shuffle-card {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 10px;
+  background: linear-gradient(145deg, #2D2D30, #1B1B1D);
+  border: 2px solid #00D4AA;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+}
+
+.shuffle-card svg {
+  width: 50%;
+  height: 50%;
+  opacity: 0.6;
+}
+
+.shuffle-card:nth-child(1) {
+  z-index: 5;
+  animation: shuffleTop 0.6s ease-in-out infinite;
+}
+.shuffle-card:nth-child(2) {
+  z-index: 4;
+  animation: shuffleMid 0.6s ease-in-out 0.15s infinite;
+}
+.shuffle-card:nth-child(3) {
+  z-index: 3;
+  animation: shuffleBot 0.6s ease-in-out 0.3s infinite;
+}
+
+@keyframes shuffleTop {
+  0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+  25% { transform: translateX(-30px) translateY(-10px) rotate(-8deg); }
+  75% { transform: translateX(30px) translateY(-10px) rotate(8deg); }
+}
+
+@keyframes shuffleMid {
+  0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+  25% { transform: translateX(20px) translateY(-5px) rotate(5deg); }
+  75% { transform: translateX(-20px) translateY(-5px) rotate(-5deg); }
+}
+
+@keyframes shuffleBot {
+  0%, 100% { transform: translateX(0) translateY(0) rotate(0deg); }
+  25% { transform: translateX(-15px) translateY(5px) rotate(-3deg); }
+  75% { transform: translateX(15px) translateY(5px) rotate(3deg); }
+}
+
+/* 選牌提示 - GitKraken Teal 版 */
+.overlay-instruction {
+  position: absolute;
+  bottom: 10%;
+  color: #4DDFC4;
+  font-size: 1rem;
+  text-align: center;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .overlay-instruction { font-size: 1.125rem; }
+}
+
+/* ─────────────────────────────────────────────────────────────
+   扇形牌陣
+   ───────────────────────────────────────────────────────────── */
+.tarot-fan {
+  position: relative;
+  width: 100%;
+  height: 300px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .tarot-fan { height: 380px; }
+}
+
+/* 扇形中的牌卡 (比對話框版大) */
+.tarot-fan .tarot-card {
+  position: absolute;
+  width: 90px;
+  height: 145px;
+  transform-origin: bottom center;
+  transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  cursor: pointer;
+}
+
+@media (min-width: 640px) {
+  .tarot-fan .tarot-card {
+    width: 120px;
+    height: 190px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .tarot-fan .tarot-card {
+    width: 140px;
+    height: 220px;
+  }
+}
+
+/* 扇形牌入場動畫 */
+.tarot-fan .tarot-card {
+  opacity: 0;
+  transform: translateY(100px) rotate(0deg) scale(0.8);
+}
+
+.tarot-fan.fan-active .tarot-card {
+  opacity: 1;
+}
+
+/* Hover 效果 - GitKraken Teal 版 */
+.tarot-fan .tarot-card:hover:not(.selected):not(.disabled) {
+  z-index: 100 !important;
+  filter: drop-shadow(0 15px 35px rgba(0, 212, 170, 0.5));
+}
+
+/* 選中效果 - GitKraken Teal 版 */
+.tarot-fan .tarot-card.selected {
+  z-index: 200 !important;
+  filter: drop-shadow(0 25px 50px rgba(0, 212, 170, 0.5));
+}
+
+.tarot-fan .tarot-card.selected .card-inner {
+  transform: rotateY(180deg);
+}
+
+/* 禁用效果 */
+.tarot-fan .tarot-card.disabled {
+  opacity: 0.2;
+  filter: grayscale(0.5);
+  pointer-events: none;
+  transition: all 0.8s ease-out;
+}
+
+/* 扇形牌卡的 card-inner 與 card-back 調整 */
+.tarot-fan .card-back .card-numeral { font-size: 0.75rem; }
+.tarot-fan .card-back .card-icon { font-size: 2rem; }
+.tarot-fan .card-back .card-name { font-size: 0.6rem; }
+.tarot-fan .card-back .card-name-zh { font-size: 0.8rem; }
+
+@media (min-width: 640px) {
+  .tarot-fan .card-back .card-numeral { font-size: 0.875rem; }
+  .tarot-fan .card-back .card-icon { font-size: 2.5rem; }
+  .tarot-fan .card-back .card-name { font-size: 0.7rem; }
+  .tarot-fan .card-back .card-name-zh { font-size: 1rem; }
+}
+
+/* Reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Prompt card hover */
+.prompt-card {
+  transition: all 0.25s ease-out;
+}
+.prompt-card:hover {
+  background: rgba(45,45,48,0.9);
+  border-color: rgba(0,212,170,0.4);
+  transform: translateX(4px);
+}
+
+/* Send button pulse */
+.send-btn {
+  transition: all 0.2s ease-out;
+}
+.send-btn:hover:not(:disabled) {
+  box-shadow: 0 0 20px rgba(0,212,170,0.5);
+  transform: scale(1.05);
+}
+.send-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+</style>
+</head>
+
+<body class="bg-void text-pale font-sans noise-overlay">
+
+<!-- ═══════════════════════════════════════════════════════════════
+     MAIN APP CONTAINER
+     ═══════════════════════════════════════════════════════════════ -->
+<div id="app" class="h-screen flex flex-col">
+
+  <!-- ─────────────────────────────────────────────────────────────
+       HEADER
+       ───────────────────────────────────────────────────────────── -->
+  <header class="flex-shrink-0 px-4 py-3 flex items-center justify-between border-b border-orchid/10 bg-abyss/50 backdrop-blur-sm z-10">
+    <div class="flex items-center gap-3">
+      <!-- Sigil Logo -->
+      <div class="w-10 h-10 sigil-glow animate-float">
+        <svg viewBox="0 0 100 100" class="w-full h-full">
+          <circle cx="50" cy="50" r="45" fill="none" stroke="#00D4AA" stroke-width="1" stroke-dasharray="4 6" opacity="0.6"/>
+          <circle cx="50" cy="50" r="35" fill="none" stroke="#7B68EE" stroke-width="0.5" opacity="0.8"/>
+          <polygon points="50,20 75,65 25,65" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.6"/>
+          <polygon points="50,80 25,35 75,35" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.6"/>
+          <circle cx="50" cy="50" r="4" fill="#00D4AA" opacity="0.9"/>
+        </svg>
+      </div>
+      <h1 class="font-display text-lg text-gold tracking-wider">TarotFriend</h1>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <!-- History Button -->
+      <button class="p-2 rounded-full hover:bg-nebula transition-colors cursor-pointer" title="對話紀錄" aria-label="對話紀錄">
+        <i data-lucide="history" class="w-5 h-5 text-ghost"></i>
+      </button>
+      <!-- Settings Button -->
+      <button class="p-2 rounded-full hover:bg-nebula transition-colors cursor-pointer" title="設定" aria-label="設定">
+        <i data-lucide="settings" class="w-5 h-5 text-ghost"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       CHAT AREA (Scrollable)
+       ───────────────────────────────────────────────────────────── -->
+  <main id="chatArea" class="flex-1 overflow-y-auto px-4 py-6 emotion-calm">
+    <div class="max-w-2xl mx-auto space-y-4">
+
+      <!-- ═══════════════════════════════════════════════════════════
+           WELCOME SCREEN (shown when no messages)
+           ═══════════════════════════════════════════════════════════ -->
+      <div id="welcomeScreen" class="flex flex-col items-center justify-center min-h-[60vh] animate-fade-in">
+
+        <!-- Animated Sigil -->
+        <div class="w-24 h-24 mb-8 sigil-glow animate-float">
+          <svg viewBox="0 0 100 100" class="w-full h-full">
+            <circle cx="50" cy="50" r="45" fill="none" stroke="#00D4AA" stroke-width="1" stroke-dasharray="4 6" opacity="0.5"/>
+            <circle cx="50" cy="50" r="38" fill="none" stroke="#00D4AA" stroke-width="0.5" stroke-dasharray="2 4" opacity="0.3"/>
+            <circle cx="50" cy="50" r="30" fill="none" stroke="#7B68EE" stroke-width="0.5" opacity="0.6"/>
+            <polygon points="50,15 80,70 20,70" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+            <polygon points="50,85 20,30 80,30" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+            <circle cx="50" cy="50" r="5" fill="#00D4AA" opacity="0.8"/>
+            <circle cx="50" cy="50" r="2" fill="#1B1B1D"/>
+          </svg>
+        </div>
+
+        <!-- Welcome Message -->
+        <div class="text-center mb-8">
+          <h2 class="font-display text-2xl text-pale mb-3">嗨，很高興見到你</h2>
+          <p class="text-ghost text-lg">今天的你，過得還好嗎？</p>
+        </div>
+
+        <!-- Prompt Suggestions -->
+        <div class="w-full max-w-md space-y-3 mb-8">
+          <p class="text-ghost text-sm text-center mb-4">選一個話題，或者直接告訴我你在想什麼</p>
+
+          <button class="prompt-card w-full text-left px-5 py-4 rounded-xl bg-abyss/60 border border-orchid/15 cursor-pointer group" onclick="selectPrompt('想聊聊感情的事...')">
+            <div class="flex items-center gap-3">
+              <i data-lucide="heart" class="w-5 h-5 text-rose group-hover:text-gold transition-colors"></i>
+              <span class="text-pale/90">想聊聊感情的事...</span>
+            </div>
+          </button>
+
+          <button class="prompt-card w-full text-left px-5 py-4 rounded-xl bg-abyss/60 border border-orchid/15 cursor-pointer group" onclick="selectPrompt('對未來感到有點迷茫...')">
+            <div class="flex items-center gap-3">
+              <i data-lucide="compass" class="w-5 h-5 text-orchid group-hover:text-gold transition-colors"></i>
+              <span class="text-pale/90">對未來感到有點迷茫...</span>
+            </div>
+          </button>
+
+          <button class="prompt-card w-full text-left px-5 py-4 rounded-xl bg-abyss/60 border border-orchid/15 cursor-pointer group" onclick="selectPrompt('工作上遇到了一些困難...')">
+            <div class="flex items-center gap-3">
+              <i data-lucide="briefcase" class="w-5 h-5 text-ember group-hover:text-gold transition-colors"></i>
+              <span class="text-pale/90">工作上遇到了一些困難...</span>
+            </div>
+          </button>
+
+          <button class="prompt-card w-full text-left px-5 py-4 rounded-xl bg-abyss/60 border border-orchid/15 cursor-pointer group" onclick="selectPrompt('想抽一張塔羅牌看看今天的指引')">
+            <div class="flex items-center gap-3">
+              <i data-lucide="sparkles" class="w-5 h-5 text-gold group-hover:text-ember transition-colors"></i>
+              <span class="text-pale/90">想抽一張塔羅牌看看今天的指引</span>
+            </div>
+          </button>
+        </div>
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           MESSAGES CONTAINER (populated by JS)
+           ═══════════════════════════════════════════════════════════ -->
+      <div id="messagesContainer" class="space-y-4 hidden">
+        <!-- Messages will be inserted here -->
+      </div>
+
+      <!-- ═══════════════════════════════════════════════════════════
+           TYPING INDICATOR
+           ═══════════════════════════════════════════════════════════ -->
+      <div id="typingIndicator" class="hidden animate-fade-in">
+        <div class="flex items-start gap-3 max-w-[85%]">
+          <!-- AI Avatar -->
+          <div class="flex-shrink-0 w-8 h-8 rounded-full bg-orchid/20 flex items-center justify-center">
+            <i data-lucide="sparkles" class="w-4 h-4 text-orchid"></i>
+          </div>
+          <!-- Typing Dots -->
+          <div class="bubble-ai px-4 py-3">
+            <div class="flex items-center gap-1.5">
+              <div class="w-2 h-2 rounded-full bg-orchid animate-typing-1"></div>
+              <div class="w-2 h-2 rounded-full bg-orchid animate-typing-2"></div>
+              <div class="w-2 h-2 rounded-full bg-orchid animate-typing-3"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ─────────────────────────────────────────────────────────────
+       INPUT AREA (Fixed Bottom)
+       ───────────────────────────────────────────────────────────── -->
+  <footer class="flex-shrink-0 px-4 pb-4 pt-2 bg-gradient-to-t from-void via-void/95 to-transparent">
+    <div class="max-w-2xl mx-auto">
+
+      <!-- Quick Actions -->
+      <div class="flex items-center gap-2 mb-3 overflow-x-auto pb-1 -mx-1 px-1">
+        <button class="action-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-nebula/50 border border-orchid/15 text-sm text-ghost whitespace-nowrap cursor-pointer" onclick="quickAction('tarot')">
+          <i data-lucide="sparkles" class="w-4 h-4 text-orchid"></i>
+          <span>抽塔羅</span>
+        </button>
+        <button class="action-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-nebula/50 border border-orchid/15 text-sm text-ghost whitespace-nowrap cursor-pointer" onclick="quickAction('crystal')">
+          <i data-lucide="gem" class="w-4 h-4 text-rose"></i>
+          <span>水晶推薦</span>
+        </button>
+        <button class="action-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-nebula/50 border border-orchid/15 text-sm text-ghost whitespace-nowrap cursor-pointer" onclick="quickAction('daily')">
+          <i data-lucide="sun" class="w-4 h-4 text-gold"></i>
+          <span>今日運勢</span>
+        </button>
+        <button class="action-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-nebula/50 border border-orchid/15 text-sm text-ghost whitespace-nowrap cursor-pointer" onclick="quickAction('mood')">
+          <i data-lucide="heart-pulse" class="w-4 h-4 text-ember"></i>
+          <span>聊聊心情</span>
+        </button>
+      </div>
+
+      <!-- Input Field -->
+      <form id="chatForm" class="relative flex items-end gap-2" onsubmit="handleSubmit(event)">
+        <div class="flex-1 relative">
+          <label for="messageInput" class="sr-only">輸入訊息</label>
+          <textarea
+            id="messageInput"
+            rows="1"
+            placeholder="今天想聊些什麼呢？"
+            class="w-full px-5 py-3.5 pr-12 bg-warmth border border-orchid/20 rounded-3xl text-pale placeholder-ghost/60 resize-none focus:outline-none input-glow transition-all duration-200"
+            style="max-height: 150px;"
+            oninput="autoResize(this)"
+            onkeydown="handleKeydown(event)"
+          ></textarea>
+        </div>
+
+        <!-- Send Button -->
+        <button
+          type="submit"
+          id="sendBtn"
+          class="send-btn flex-shrink-0 w-12 h-12 rounded-full bg-gradient-to-br from-gold to-ember flex items-center justify-center cursor-pointer"
+          aria-label="傳送訊息"
+        >
+          <i data-lucide="arrow-up" class="w-5 h-5 text-void"></i>
+        </button>
+      </form>
+
+      <!-- Safety Note -->
+      <p class="text-center text-xs text-ghost/50 mt-3">
+        TarotFriend 是你的傾訴夥伴，但無法取代專業心理諮詢
+      </p>
+    </div>
+  </footer>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════════════ -->
+<script>
+// Initialize Lucide icons
+lucide.createIcons();
+
+// State
+let messages = [];
+let isTyping = false;
+let pendingTarotReading = null;
+
+// Tarot deck data (Major Arcana)
+const tarotDeck = [
+  { numeral: '0', name: 'The Fool', nameZh: '愚者', icon: '🌟', meaning: '新的開始、冒險、純真、自由。這張牌提醒你保持開放的心態，相信宇宙會引導你走向正確的方向。' },
+  { numeral: 'I', name: 'The Magician', nameZh: '魔術師', icon: '✨', meaning: '創造力、意志力、技能、自信。你擁有所有需要的資源，現在是將夢想化為現實的時刻。' },
+  { numeral: 'II', name: 'High Priestess', nameZh: '女祭司', icon: '🌙', meaning: '直覺、智慧、神秘、內在知識。答案就在你的內心，靜下心來傾聽內在的聲音。' },
+  { numeral: 'III', name: 'The Empress', nameZh: '皇后', icon: '🌸', meaning: '豐盛、創造、滋養、美。這是一個充滿愛與創造力的時期，好好照顧自己和身邊的人。' },
+  { numeral: 'IV', name: 'The Emperor', nameZh: '皇帝', icon: '👑', meaning: '權威、結構、穩定、領導。現在需要你展現決斷力，用理性的方式處理問題。' },
+  { numeral: 'V', name: 'Hierophant', nameZh: '教皇', icon: '🔱', meaning: '傳統、指導、信仰、教育。尋求智者的建議，或者遵循既定的方法可能會有幫助。' },
+  { numeral: 'VI', name: 'The Lovers', nameZh: '戀人', icon: '💕', meaning: '愛情、選擇、和諧、價值觀。面對重要的選擇時，跟隨你的心，選擇與你價值觀一致的道路。' },
+  { numeral: 'VII', name: 'The Chariot', nameZh: '戰車', icon: '⚔️', meaning: '意志力、決心、勝利、控制。相信自己的力量，堅持下去，成功就在眼前。' },
+  { numeral: 'VIII', name: 'Strength', nameZh: '力量', icon: '🦁', meaning: '內在力量、勇氣、耐心、慈悲。真正的力量來自於溫柔和自我控制，而非蠻力。' },
+  { numeral: 'IX', name: 'The Hermit', nameZh: '隱者', icon: '🏔️', meaning: '內省、尋求真理、獨處、智慧。這是適合獨處反思的時期，向內尋找答案。' },
+  { numeral: 'X', name: 'Wheel of Fortune', nameZh: '命運之輪', icon: '☸️', meaning: '命運、轉變、週期、機會。變化即將來臨，接受生命的起伏，好運正在轉向你。' },
+  { numeral: 'XI', name: 'Justice', nameZh: '正義', icon: '⚖️', meaning: '公平、真相、因果、責任。誠實面對自己和他人，公正的結果終會到來。' },
+  { numeral: 'XII', name: 'Hanged Man', nameZh: '倒吊人', icon: '🙃', meaning: '暫停、新視角、犧牲、等待。有時候放下執著，換個角度看問題，會有意想不到的收穫。' },
+  { numeral: 'XIII', name: 'Death', nameZh: '死神', icon: '🦋', meaning: '結束與新生、轉變、放下。這不是終結，而是蛻變。舊的必須離去，新的才能到來。' },
+  { numeral: 'XIV', name: 'Temperance', nameZh: '節制', icon: '🏺', meaning: '平衡、耐心、調和、療癒。保持中庸之道，慢慢來，讓事情自然發展。' },
+  { numeral: 'XV', name: 'The Devil', nameZh: '惡魔', icon: '⛓️', meaning: '束縛、執著、陰影、物質。審視什麼在綁住你，認清這些鎖鏈其實是可以打破的。' },
+  { numeral: 'XVI', name: 'The Tower', nameZh: '高塔', icon: '🗼', meaning: '突變、覺醒、釋放、真相。雖然感覺像災難，但這是必要的瓦解，為了建造更好的未來。' },
+  { numeral: 'XVII', name: 'The Star', nameZh: '星星', icon: '⭐', meaning: '希望、靈感、療癒、平靜。即使在黑暗中，也有光芒指引著你。保持希望。' },
+  { numeral: 'XVIII', name: 'The Moon', nameZh: '月亮', icon: '🌕', meaning: '直覺、幻象、潛意識、恐懼。事情可能不如表面看起來那樣，相信你的直覺去探索真相。' },
+  { numeral: 'XIX', name: 'The Sun', nameZh: '太陽', icon: '☀️', meaning: '喜悅、成功、活力、樂觀。光明的時刻到來了！享受這份快樂和成就感。' },
+  { numeral: 'XX', name: 'Judgement', nameZh: '審判', icon: '📯', meaning: '覺醒、重生、召喚、反思。是時候正視過去，原諒自己和他人，迎接新的開始。' },
+  { numeral: 'XXI', name: 'The World', nameZh: '世界', icon: '🌍', meaning: '完成、圓滿、成就、整合。一個週期圓滿結束，你已經走過了完整的旅程。' },
+];
+
+// DOM Elements
+const welcomeScreen = document.getElementById('welcomeScreen');
+const messagesContainer = document.getElementById('messagesContainer');
+const typingIndicator = document.getElementById('typingIndicator');
+const messageInput = document.getElementById('messageInput');
+const chatArea = document.getElementById('chatArea');
+
+// ────────────────────────────────────────────────────────────────
+// Auto-resize textarea
+// ────────────────────────────────────────────────────────────────
+function autoResize(textarea) {
+  textarea.style.height = 'auto';
+  textarea.style.height = Math.min(textarea.scrollHeight, 150) + 'px';
+}
+
+// ────────────────────────────────────────────────────────────────
+// Handle keyboard shortcuts
+// ────────────────────────────────────────────────────────────────
+function handleKeydown(event) {
+  // Submit on Enter (without Shift)
+  if (event.key === 'Enter' && !event.shiftKey) {
+    event.preventDefault();
+    handleSubmit(event);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────
+// Select prompt from welcome screen
+// ────────────────────────────────────────────────────────────────
+function selectPrompt(text) {
+  messageInput.value = text;
+  messageInput.focus();
+  autoResize(messageInput);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Quick action buttons
+// ────────────────────────────────────────────────────────────────
+function quickAction(type) {
+  const prompts = {
+    tarot: '幫我抽一張塔羅牌，想看看現在的狀況有什麼指引',
+    crystal: '根據我現在的狀態，推薦我適合的水晶',
+    daily: '想知道今天的運勢如何',
+    mood: '最近心情有點複雜，想找人聊聊',
+  };
+  messageInput.value = prompts[type] || '';
+  messageInput.focus();
+  autoResize(messageInput);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Handle form submission
+// ────────────────────────────────────────────────────────────────
+function handleSubmit(event) {
+  event.preventDefault();
+
+  const text = messageInput.value.trim();
+  if (!text || isTyping) return;
+
+  // Add user message
+  addMessage('user', text);
+
+  // Clear input
+  messageInput.value = '';
+  autoResize(messageInput);
+
+  // Show typing indicator
+  showTyping();
+
+  // Simulate AI response (replace with real API call)
+  setTimeout(() => {
+    hideTyping();
+    const response = generateMockResponse(text);
+    // If response is null, it means a special UI (like tarot spread) was triggered
+    if (response !== null) {
+      addMessage('ai', response);
+    }
+  }, 1500 + Math.random() * 1000);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Add message to chat
+// ────────────────────────────────────────────────────────────────
+function addMessage(sender, text) {
+  // Hide welcome screen on first message
+  if (messages.length === 0) {
+    welcomeScreen.classList.add('hidden');
+    messagesContainer.classList.remove('hidden');
+  }
+
+  messages.push({ sender, text, time: new Date() });
+
+  // Create message element
+  const msgEl = document.createElement('div');
+  msgEl.className = 'animate-fade-in-up';
+
+  if (sender === 'user') {
+    msgEl.innerHTML = `
+      <div class="flex justify-end">
+        <div class="bubble-user px-5 py-3 max-w-[85%]">
+          <p class="text-pale leading-relaxed whitespace-pre-wrap">${escapeHtml(text)}</p>
+        </div>
+      </div>
+    `;
+  } else {
+    msgEl.innerHTML = `
+      <div class="flex items-start gap-3 max-w-[85%]">
+        <div class="flex-shrink-0 w-8 h-8 rounded-full bg-orchid/20 flex items-center justify-center">
+          <i data-lucide="sparkles" class="w-4 h-4 text-orchid"></i>
+        </div>
+        <div class="bubble-ai px-5 py-3">
+          <p class="text-pale leading-relaxed whitespace-pre-wrap">${escapeHtml(text)}</p>
+        </div>
+      </div>
+    `;
+    // Re-initialize icons for the new message
+    lucide.createIcons({ nodes: msgEl.querySelectorAll('[data-lucide]') });
+  }
+
+  messagesContainer.appendChild(msgEl);
+
+  // Scroll to bottom
+  scrollToBottom();
+}
+
+// ────────────────────────────────────────────────────────────────
+// Show/hide typing indicator
+// ────────────────────────────────────────────────────────────────
+function showTyping() {
+  isTyping = true;
+  typingIndicator.classList.remove('hidden');
+  scrollToBottom();
+}
+
+function hideTyping() {
+  isTyping = false;
+  typingIndicator.classList.add('hidden');
+}
+
+// ────────────────────────────────────────────────────────────────
+// Scroll chat to bottom
+// ────────────────────────────────────────────────────────────────
+function scrollToBottom() {
+  chatArea.scrollTo({
+    top: chatArea.scrollHeight,
+    behavior: 'smooth'
+  });
+}
+
+// ────────────────────────────────────────────────────────────────
+// Escape HTML to prevent XSS
+// ────────────────────────────────────────────────────────────────
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// ════════════════════════════════════════════════════════════════
+// 全螢幕沉浸式塔羅牌抽牌體驗
+// ════════════════════════════════════════════════════════════════
+
+/**
+ * 顯示全螢幕塔羅牌 Overlay
+ * @param {number} numCards - 要展示的牌數（預設 5）
+ */
+function showTarotOverlay(numCards = 5) {
+  // 如果已有 overlay 則不重複創建
+  if (document.getElementById('tarotOverlay')) return;
+
+  // 創建 Overlay DOM
+  const overlay = document.createElement('div');
+  overlay.id = 'tarotOverlay';
+  overlay.className = 'tarot-overlay';
+  overlay.innerHTML = `
+    <!-- 關閉按鈕 -->
+    <button class="overlay-close" onclick="closeTarotOverlay()" aria-label="關閉">
+      <i data-lucide="x" class="w-6 h-6 text-orchid"></i>
+    </button>
+
+    <!-- 標題 -->
+    <div class="overlay-header">
+      <h2 class="overlay-title">✨ 塔羅指引 ✨</h2>
+      <p class="overlay-subtitle" id="overlaySubtitle">洗牌中，請專注你的問題...</p>
+    </div>
+
+    <!-- 洗牌動畫區 -->
+    <div class="shuffle-container" id="shuffleContainer">
+      <div class="shuffle-card">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="35" fill="none" stroke="#00D4AA" stroke-width="1" opacity="0.6"/>
+          <polygon points="50,20 75,65 25,65" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+          <polygon points="50,80 25,35 75,35" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+          <circle cx="50" cy="50" r="5" fill="#00D4AA" opacity="0.8"/>
+        </svg>
+      </div>
+      <div class="shuffle-card">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="35" fill="none" stroke="#00D4AA" stroke-width="1" opacity="0.6"/>
+          <polygon points="50,20 75,65 25,65" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+          <polygon points="50,80 25,35 75,35" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+          <circle cx="50" cy="50" r="5" fill="#00D4AA" opacity="0.8"/>
+        </svg>
+      </div>
+      <div class="shuffle-card">
+        <svg viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="35" fill="none" stroke="#00D4AA" stroke-width="1" opacity="0.6"/>
+          <polygon points="50,20 75,65 25,65" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+          <polygon points="50,80 25,35 75,35" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+          <circle cx="50" cy="50" r="5" fill="#00D4AA" opacity="0.8"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- 扇形牌陣區（初始隱藏） -->
+    <div class="tarot-fan" id="tarotFan" style="display: none;"></div>
+
+    <!-- 選牌提示 -->
+    <p class="overlay-instruction" id="overlayInstruction" style="display: none;">
+      選擇最吸引你的那一張牌
+    </p>
+  `;
+
+  document.body.appendChild(overlay);
+
+  // 初始化 Lucide icons
+  lucide.createIcons({ nodes: overlay.querySelectorAll('[data-lucide]') });
+
+  // 2.5 秒後切換到扇形牌陣
+  setTimeout(() => {
+    showFanSpread(numCards);
+  }, 2500);
+}
+
+/**
+ * 顯示扇形牌陣
+ * @param {number} numCards - 牌數
+ */
+function showFanSpread(numCards) {
+  const shuffleContainer = document.getElementById('shuffleContainer');
+  const fanContainer = document.getElementById('tarotFan');
+  const subtitle = document.getElementById('overlaySubtitle');
+  const instruction = document.getElementById('overlayInstruction');
+
+  if (!shuffleContainer || !fanContainer) return;
+
+  // 隱藏洗牌動畫
+  shuffleContainer.style.display = 'none';
+
+  // 更新標題
+  subtitle.textContent = '牌已展開，請憑直覺選擇';
+
+  // 隨機選取牌
+  const shuffled = [...tarotDeck].sort(() => Math.random() - 0.5);
+  const spreadCards = shuffled.slice(0, numCards);
+
+  // 存儲待選牌
+  pendingTarotReading = {
+    cards: spreadCards,
+    selectedCard: null,
+    numCards: numCards,
+  };
+
+  // 計算扇形角度
+  // 牌數越多，總角度越大
+  const totalAngle = numCards <= 3 ? 40 : numCards <= 5 ? 60 : 80;
+  const angleStep = totalAngle / (numCards - 1);
+  const startAngle = -totalAngle / 2;
+
+  // 生成牌卡 HTML
+  fanContainer.innerHTML = spreadCards.map((card, index) => {
+    const angle = startAngle + angleStep * index;
+    // 計算 Y 偏移（中間的牌更高）
+    const yOffset = Math.abs(angle) * 0.8;
+    return `
+      <div class="tarot-card"
+           data-index="${index}"
+           onclick="selectCardFromOverlay(${index})"
+           style="--angle: ${angle}deg; --y-offset: ${yOffset}px; z-index: ${10 + index};">
+        <div class="card-inner">
+          <div class="card-front">
+            <div class="card-front-pattern">
+              <svg viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="35" fill="none" stroke="#00D4AA" stroke-width="1" opacity="0.6"/>
+                <polygon points="50,20 75,65 25,65" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+                <polygon points="50,80 25,35 75,35" fill="none" stroke="#7B68EE" stroke-width="0.5" stroke-dasharray="3 4" opacity="0.5"/>
+                <circle cx="50" cy="50" r="5" fill="#00D4AA" opacity="0.8"/>
+              </svg>
+            </div>
+          </div>
+          <div class="card-back">
+            <span class="card-numeral">${card.numeral}</span>
+            <span class="card-icon">${card.icon}</span>
+            <span class="card-name">${card.name}</span>
+            <span class="card-name-zh">${card.nameZh}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  // 顯示牌陣
+  fanContainer.style.display = 'flex';
+
+  // 依序入場動畫
+  const cards = fanContainer.querySelectorAll('.tarot-card');
+  cards.forEach((card, i) => {
+    const angle = startAngle + angleStep * i;
+    const yOffset = Math.abs(angle) * 0.8;
+
+    setTimeout(() => {
+      card.style.opacity = '1';
+      card.style.transform = `translateY(-${yOffset}px) rotate(${angle}deg) scale(1)`;
+    }, 100 + i * 120);
+  });
+
+  // 所有牌入場後，啟用 fan-active 並顯示提示
+  setTimeout(() => {
+    fanContainer.classList.add('fan-active');
+    instruction.style.display = 'block';
+  }, 100 + numCards * 120 + 200);
+}
+
+/**
+ * 從 Overlay 選擇牌卡
+ * @param {number} index - 牌的索引
+ */
+function selectCardFromOverlay(index) {
+  if (!pendingTarotReading || pendingTarotReading.selectedCard !== null) return;
+
+  const fanContainer = document.getElementById('tarotFan');
+  const instruction = document.getElementById('overlayInstruction');
+  const subtitle = document.getElementById('overlaySubtitle');
+
+  if (!fanContainer) return;
+
+  const cards = fanContainer.querySelectorAll('.tarot-card');
+  const selectedCard = pendingTarotReading.cards[index];
+
+  // 標記已選
+  pendingTarotReading.selectedCard = selectedCard;
+
+  // 隱藏提示
+  if (instruction) instruction.style.display = 'none';
+  if (subtitle) subtitle.textContent = selectedCard.nameZh;
+
+  // 計算讓選中牌置中的位置
+  const numCards = pendingTarotReading.numCards;
+  const totalAngle = numCards <= 3 ? 40 : numCards <= 5 ? 60 : 80;
+  const angleStep = totalAngle / (numCards - 1);
+  const startAngle = -totalAngle / 2;
+
+  // 動畫：選中牌置中放大翻轉，其他牌淡出
+  cards.forEach((card, i) => {
+    if (i === index) {
+      card.classList.add('selected');
+      // 移到中央並放大
+      card.style.transform = 'translateY(-100px) rotate(0deg) scale(1.3)';
+      card.style.zIndex = '200';
+    } else {
+      card.classList.add('disabled');
+      // 稍微縮小並淡出
+      const angle = startAngle + angleStep * i;
+      card.style.transform = `translateY(50px) rotate(${angle * 0.5}deg) scale(0.7)`;
+    }
+  });
+
+  // 翻牌後關閉 Overlay 並回到對話
+  setTimeout(() => {
+    closeTarotOverlay();
+
+    // 短暫延遲後在對話中顯示解讀
+    setTimeout(() => {
+      showTarotReading(selectedCard);
+    }, 400);
+  }, 1500);
+}
+
+/**
+ * 關閉塔羅 Overlay
+ */
+function closeTarotOverlay() {
+  const overlay = document.getElementById('tarotOverlay');
+  if (!overlay) return;
+
+  overlay.classList.add('closing');
+
+  setTimeout(() => {
+    overlay.remove();
+  }, 500);
+}
+
+/**
+ * 顯示塔羅牌解讀（在對話區）
+ * @param {object} card - 牌卡資料
+ */
+function showTarotReading(card) {
+  // 確保對話區可見
+  if (messages.length === 0) {
+    welcomeScreen.classList.add('hidden');
+    messagesContainer.classList.remove('hidden');
+  }
+
+  showTyping();
+
+  setTimeout(() => {
+    hideTyping();
+
+    const readingText = `✨ ${card.icon} ${card.nameZh} (${card.name}) ${card.icon} ✨
+
+${card.meaning}
+
+這張牌出現在這個時刻，是宇宙想要告訴你的訊息。讓它在心中沉澱一下，你會慢慢感受到它的意義。
+
+如果你想更深入了解這張牌，或者有其他想聊的，隨時告訴我。`;
+
+    addMessage('ai', readingText);
+
+    // 清除暫存
+    pendingTarotReading = null;
+  }, 800 + Math.random() * 400);
+}
+
+// ────────────────────────────────────────────────────────────────
+// Mock AI response (replace with real API)
+// ────────────────────────────────────────────────────────────────
+function generateMockResponse(userText) {
+  const lowerText = userText.toLowerCase();
+
+  if (lowerText.includes('塔羅') || lowerText.includes('抽牌') || lowerText.includes('指引')) {
+    // 觸發全螢幕沉浸式抽牌體驗
+    setTimeout(() => showTarotOverlay(5), 300);
+    return null; // 不添加文字訊息，由 Overlay 處理
+  }
+
+  if (lowerText.includes('感情') || lowerText.includes('愛情') || lowerText.includes('關係')) {
+    return `感情的事，總是讓人又期待又害怕受傷害呢。\n\n你願意多說一些嗎？是正在一段關係裡感到困惑，還是對於要不要開始新的關係猶豫不決？\n\n不管是什麼，我都在這裡陪你慢慢理清思緒。`;
+  }
+
+  if (lowerText.includes('工作') || lowerText.includes('職涯') || lowerText.includes('事業')) {
+    return `工作上的壓力和困惑，我能理解那種感覺。\n\n有時候我們會懷疑自己是不是走在對的路上，或是不確定下一步該怎麼走。這些都是很正常的。\n\n你現在最困擾的是什麼呢？是和同事主管的關係、對工作內容感到倦怠，還是在考慮要不要換個方向？`;
+  }
+
+  if (lowerText.includes('未來') || lowerText.includes('迷茫') || lowerText.includes('方向')) {
+    return `對未來感到迷茫，其實代表你正在認真思考自己的人生，這是很有意義的事。\n\n很多人只是隨波逐流，而你願意停下來問自己真正想要什麼，這需要勇氣。\n\n你覺得現在最讓你不確定的是什麼？我們可以一起探索看看。`;
+  }
+
+  if (lowerText.includes('水晶')) {
+    return `根據你現在的能量狀態，我感應到你可能需要一些平靜和療癒。\n\n💜 紫水晶 (Amethyst)\n這顆水晶能幫助你放鬆思緒，提升直覺力。當你感到焦慮或失眠時，把它放在枕邊會很有幫助。\n\n🤍 月光石 (Moonstone)\n月光石與情緒療癒相關，特別適合正在經歷情感波動的時期。它能幫助你接納自己的感受。\n\n你對哪一顆比較有感覺呢？`;
+  }
+
+  if (lowerText.includes('運勢') || lowerText.includes('今天')) {
+    return `讓我為你看看今天的能量...\n\n☀️ 今日運勢\n\n整體來說，今天是適合內省和休息的日子。不需要強迫自己做太多決定，讓事情自然流動就好。\n\n💡 小提醒：下午時段可能會有一些出乎意料的好消息，保持開放的心態去接收。\n\n🌙 幸運色：淡紫色\n💫 幸運數字：7\n\n今天有什麼特別想問的嗎？`;
+  }
+
+  // Default response
+  return `謝謝你願意和我分享。我在這裡聽著，不會評判你的任何想法或感受。\n\n你現在感覺怎麼樣呢？如果你願意，可以多說一些，或者我們也可以抽張塔羅牌來看看有什麼指引。`;
+}
+</script>
+
+</body>
+</html>

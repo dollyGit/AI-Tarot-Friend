@@ -1,0 +1,141 @@
+syntax = "proto3";
+
+package dal.v1;
+
+option go_package = "dal/v1;dalv1";
+
+// ─── Cache & Write Strategies ──────────────────────────
+
+enum CachePolicy {
+  CACHE_POLICY_UNSPECIFIED = 0;
+  CACHE_POLICY_CACHE_FIRST = 1;   // Check cache first, fallback to DB on miss
+  CACHE_POLICY_DB_FIRST = 2;      // Query DB directly, update cache
+  CACHE_POLICY_CACHE_ONLY = 3;    // Only query cache
+  CACHE_POLICY_NO_CACHE = 4;      // Bypass cache entirely
+}
+
+enum WriteStrategy {
+  WRITE_STRATEGY_UNSPECIFIED = 0;
+  WRITE_STRATEGY_WRITE_THROUGH = 1;  // Sync write to both DB + cache
+  WRITE_STRATEGY_WRITE_BEHIND = 2;   // Write cache first, async flush to DB
+  WRITE_STRATEGY_WRITE_AROUND = 3;   // Write DB only, skip cache
+}
+
+// ─── Query ─────────────────────────────────────────────
+
+message QueryRequest {
+  string service = 1;               // "customer" | "tarot" | "caring" | "shop" | "scheduler"
+  string entity = 2;                // "customer" | "appointment" | "order" ...
+  map<string, string> filters = 3;  // Key-value filter pairs
+  int32 limit = 4;
+  int32 offset = 5;
+  string order_by = 6;
+  CachePolicy cache_policy = 7;
+}
+
+message QueryResponse {
+  repeated bytes records = 1;       // JSON-encoded entity records
+  int64 total = 2;
+  bool from_cache = 3;
+}
+
+// ─── Write ─────────────────────────────────────────────
+
+message WriteRequest {
+  string service = 1;
+  string entity = 2;
+  string operation = 3;             // "create" | "update" | "delete"
+  bytes payload = 4;                // JSON-encoded entity data
+  WriteStrategy strategy = 5;
+}
+
+message WriteResponse {
+  string id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+// ─── BatchWrite ────────────────────────────────────────
+
+message BatchWriteRequest {
+  string service = 1;
+  string entity = 2;
+  string operation = 3;
+  bytes payload = 4;
+  WriteStrategy strategy = 5;
+}
+
+message BatchWriteResponse {
+  string id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+// ─── Subscribe ─────────────────────────────────────────
+
+message SubscribeRequest {
+  string service = 1;               // "customer" | "tarot" | "shop" ...
+  string entity = 2;                // "customer" | "order" | "appointment" ...
+  map<string, string> filters = 3;
+}
+
+message SubscribeResponse {
+  string event_id = 1;
+  string entity = 2;
+  string operation = 3;             // "INSERT" | "UPDATE" | "DELETE"
+  bytes payload = 4;                // JSON-encoded entity data
+  int64 timestamp = 5;
+  map<string, string> metadata = 6;
+}
+
+// ─── IngestStream ──────────────────────────────────────
+
+message IngestStreamRequest {
+  string service = 1;
+  string entity = 2;
+  string operation = 3;
+  bytes payload = 4;
+  WriteStrategy strategy = 5;
+}
+
+message IngestStreamResponse {
+  string id = 1;
+  bool success = 2;
+  string error = 3;
+}
+
+// ─── Health Check ──────────────────────────────────────
+
+message CheckRequest {
+  string service = 1;               // Optional: check specific storage engine
+}
+
+message CheckResponse {
+  enum ServingStatus {
+    SERVING_STATUS_UNSPECIFIED = 0;
+    SERVING_STATUS_SERVING = 1;
+    SERVING_STATUS_NOT_SERVING = 2;
+  }
+  ServingStatus status = 1;
+  map<string, string> details = 2;  // Per-engine health info
+}
+
+// ─── Service Definition ────────────────────────────────
+
+service DataAccessService {
+  // Synchronous CRUD
+  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc Write(WriteRequest) returns (WriteResponse);
+
+  // Bidirectional streaming: batch writes with per-item responses
+  rpc BatchWrite(stream BatchWriteRequest) returns (stream BatchWriteResponse);
+
+  // Server streaming: subscribe to entity change events
+  rpc Subscribe(SubscribeRequest) returns (stream SubscribeResponse);
+
+  // Bidirectional streaming: high-throughput data ingestion
+  rpc IngestStream(stream IngestStreamRequest) returns (stream IngestStreamResponse);
+
+  // Health check
+  rpc Check(CheckRequest) returns (CheckResponse);
+}

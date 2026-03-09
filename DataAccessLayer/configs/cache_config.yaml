@@ -1,0 +1,73 @@
+# DAL Cache Configuration
+# Strategy: read_through | write_through | write_behind
+# TTL: duration string (e.g., 10m, 2h, 30s)
+
+entities:
+  # ── Customer Service ──────────────────────────────────
+  customer:
+    strategy: read_through
+    ttl: 10m
+  customer_contact:
+    strategy: read_through
+    ttl: 10m
+  customer_birth_chart:
+    strategy: read_through
+    ttl: 15m
+  customer_address:
+    strategy: read_through
+    ttl: 10m
+  tag:
+    strategy: read_through
+    ttl: 30m
+  customer_tag:
+    strategy: read_through
+    ttl: 10m
+  finance_record:
+    strategy: write_through
+    ttl: 5m
+  customer_consent:
+    strategy: read_through
+    ttl: 15m
+  customer_note:
+    strategy: read_through
+    ttl: 10m
+
+  # ── Caring Service ────────────────────────────────────
+  caring_plan:
+    strategy: read_through
+    ttl: 10m
+  caring_action:
+    strategy: write_through
+    ttl: 5m
+  sentiment_history:
+    strategy: write_behind
+    ttl: 5m
+    flush_interval: 5s
+  caring_rule:
+    strategy: read_through
+    ttl: 30m
+  caring_template:
+    strategy: read_through
+    ttl: 30m
+
+  # ── Shopping Cart Service ─────────────────────────────
+  shopify_customer_map:
+    strategy: read_through
+    ttl: 15m
+  webhook_event_log:
+    strategy: write_through
+    ttl: 2m
+
+  # ── Scheduler Service ─────────────────────────────────
+  tarotist:
+    strategy: read_through
+    ttl: 15m
+  availability:
+    strategy: read_through
+    ttl: 2m
+  appointment:
+    strategy: write_through
+    ttl: 5m
+  review:
+    strategy: read_through
+    ttl: 10m

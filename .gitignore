@@ -1,0 +1,92 @@
+# ============================================================
+# TarotFriend Monorepo — .gitignore
+# Node.js + Go + Python + IDE + OS + Docker
+# ============================================================
+
+# ── Node.js ──────────────────────────────────────────────────
+node_modules/
+dist/
+build/
+.next/
+.nuxt/
+*.tsbuildinfo
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Go ───────────────────────────────────────────────────────
+bin/
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+__debug_bin*
+
+# ── Python ───────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+*.egg
+.venv/
+venv/
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+htmlcov/
+
+# ── Environment ──────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.settings/
+
+# ── OS ───────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+ehthumbs.db
+
+# ── Docker ───────────────────────────────────────────────────
+*.tar
+
+# ── Coverage & Testing ──────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+# ── Logs ─────────────────────────────────────────────────────
+*.log
+logs/
+
+# ── Generated Files ─────────────────────────────────────────
+# Proto generated stubs (uncomment if you want to check in stubs)
+# gen/
+
+# ── Project-Specific ────────────────────────────────────────
+# PDF generation artifacts
+TarotFriend-PitchDeck-2026.pdf
+generate-pdf.js
+
+# Claude Code local settings (keep launch.json, ignore local settings)
+.claude/settings.local.json
+**/.claude/settings.local.json
+
+# Data volumes (for local Docker)
+data/
+
+# Generated HTML artifacts & archives
+architecture-overview.html
+pitch-deck.html
+frontend.zip

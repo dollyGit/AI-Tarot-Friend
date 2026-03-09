@@ -1,0 +1,166 @@
+// CustomerManagement — Prisma Schema
+// Source: ARCHITECTURE.md §6.1 + CUSTOMER_SCHEMA.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Customer {
+  id            String   @id @default(uuid())
+  email         String   @unique
+  displayName   String   @map("display_name")
+  phone         String?
+  locale        String   @default("zh-TW")
+  tier          String   @default("free")    // free | premium | vip
+  status        String   @default("active")  // active | suspended | deleted
+
+  // Birth data (命理)
+  birthDate     String?  @map("birth_date")
+  birthTime     String?  @map("birth_time")
+  birthCity     String?  @map("birth_city")
+  birthLat      Float?   @map("birth_lat")
+  birthLng      Float?   @map("birth_lng")
+  zodiacSign    String?  @map("zodiac_sign")
+  chineseZodiac String?  @map("chinese_zodiac")
+  fiveElement   String?  @map("five_element")
+  occupation    String?
+  industry      String?
+
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  contacts      CustomerContact[]
+  birthCharts   CustomerBirthChart[]
+  addresses     CustomerAddress[]
+  tags          CustomerTag[]
+  financeRecords FinanceRecord[]
+  consents      CustomerConsent[]
+  notes         CustomerNote[]
+
+  @@map("customer")
+}
+
+model CustomerContact {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  nickname      String
+  relationship  String   // spouse | child | parent | friend | partner
+  birthDate     String?  @map("birth_date")
+  birthTime     String?  @map("birth_time")
+  birthCity     String?  @map("birth_city")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@map("customer_contact")
+}
+
+model CustomerBirthChart {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  ownerType     String   @map("owner_type")   // self | contact
+  contactId     String?  @map("contact_id")
+  chartType     String   @map("chart_type")    // natal | synastry | transit
+  partnerId     String?  @map("partner_id")    // for synastry
+  documentRef   String?  @map("document_ref")  // MongoDB document reference
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@map("customer_birth_chart")
+}
+
+model CustomerAddress {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  label         String   @default("home")      // home | office | other
+  recipient     String
+  phone         String?
+  addressLine1  String   @map("address_line1")
+  addressLine2  String?  @map("address_line2")
+  city          String
+  district      String?
+  postalCode    String   @map("postal_code")
+  country       String   @default("TW")
+  isDefault     Boolean  @default(false) @map("is_default")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@map("customer_address")
+}
+
+model Tag {
+  id            String   @id @default(uuid())
+  name          String   @unique
+  category      String   // interest | behavior | demographic | custom
+  color         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customers     CustomerTag[]
+
+  @@map("tag")
+}
+
+model CustomerTag {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  tagId         String   @map("tag_id")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+  tag           Tag      @relation(fields: [tagId], references: [id])
+
+  @@unique([customerId, tagId])
+  @@map("customer_tag")
+}
+
+model FinanceRecord {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  type          String   // purchase | refund | top_up | subscription
+  amount        Decimal
+  currency      String   @default("TWD")
+  referenceId   String?  @map("reference_id")
+  description   String?
+  status        String   @default("pending") // pending | completed | failed | reversed
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@map("finance_record")
+}
+
+model CustomerConsent {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  consentType   String   @map("consent_type") // marketing_email | data_processing | ...
+  granted       Boolean  @default(false)
+  grantedAt     DateTime? @map("granted_at")
+  revokedAt     DateTime? @map("revoked_at")
+  ipAddress     String?  @map("ip_address")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@unique([customerId, consentType])
+  @@map("customer_consent")
+}
+
+model CustomerNote {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  authorId      String   @map("author_id")
+  content       String
+  category      String   @default("general") // general | support | reading | care
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  customer      Customer @relation(fields: [customerId], references: [id])
+
+  @@map("customer_note")
+}

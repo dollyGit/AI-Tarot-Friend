@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package dal.v1;
+
+option go_package = "dal/v1;dalv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ─── Shopify Customer Mapping ──────────────────────────
+
+message ShopifyCustomerMap {
+  string id = 1;
+  string customer_id = 2;           // Internal customer_db.customer.id
+  string shopify_customer_id = 3;   // Shopify's customer ID
+  string shopify_email = 4;
+  google.protobuf.Timestamp synced_at = 5;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// ─── Webhook Event Log ─────────────────────────────────
+
+message WebhookEventLog {
+  string id = 1;
+  string shopify_webhook_id = 2;    // Shopify's idempotency key
+  string topic = 3;                  // "orders/create" | "orders/paid" | ...
+  string shopify_resource_id = 4;
+  string payload_json = 5;          // Raw Shopify webhook JSON
+  string status = 6;                // "pending" | "processed" | "failed"
+  google.protobuf.Timestamp processed_at = 7;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// ─── Shopify Webhook → Internal Event Mapping ──────────
+//
+// | Shopify Webhook     | Internal Event       | DAL Writes                                    |
+// |---------------------|----------------------|-----------------------------------------------|
+// | orders/create       | ORDER_CREATED        | finance_record + spending TS + activity_event  |
+// | orders/paid         | ORDER_PAID           | finance_record status update                   |
+// | orders/fulfilled    | ORDER_FULFILLED      | activity_event                                 |
+// | orders/cancelled    | ORDER_CANCELLED      | finance_record reversal                        |
+// | refunds/create      | REFUND_CREATED       | finance_record + spending TS                   |
+// | products/update     | PRODUCT_UPDATED      | Graph Crystal node sync                        |
+// | products/delete     | PRODUCT_DELETED      | Graph Crystal node removal                     |
+// | checkouts/create    | CHECKOUT_STARTED     | visit_log + engagement TS                      |

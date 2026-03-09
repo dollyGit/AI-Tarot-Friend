@@ -1,0 +1,82 @@
+syntax = "proto3";
+
+package events.v1;
+
+option go_package = "events/v1;eventsv1";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/struct.proto";
+
+// ─── Event Types ───────────────────────────────────────
+
+enum EventType {
+  EVENT_TYPE_UNSPECIFIED = 0;
+
+  // TarotReading events
+  EVENT_TYPE_READING_COMPLETED = 1;
+  EVENT_TYPE_READING_FEEDBACK = 2;
+  EVENT_TYPE_CRISIS_DETECTED = 3;
+
+  // Customer events
+  EVENT_TYPE_CUSTOMER_CREATED = 10;
+  EVENT_TYPE_CUSTOMER_UPDATED = 11;
+  EVENT_TYPE_CUSTOMER_TIER_CHANGED = 12;
+
+  // Shopping events
+  EVENT_TYPE_ORDER_CREATED = 20;
+  EVENT_TYPE_ORDER_PAID = 21;
+  EVENT_TYPE_ORDER_FULFILLED = 22;
+  EVENT_TYPE_ORDER_CANCELLED = 23;
+  EVENT_TYPE_REFUND_CREATED = 24;
+  EVENT_TYPE_CHECKOUT_STARTED = 25;
+  EVENT_TYPE_PRODUCT_UPDATED = 26;
+
+  // Caring events
+  EVENT_TYPE_CARING_ACTION_SENT = 30;
+  EVENT_TYPE_CARING_ACTION_DELIVERED = 31;
+  EVENT_TYPE_CARING_ACTION_READ = 32;
+  EVENT_TYPE_SENTIMENT_RECORDED = 33;
+
+  // Scheduler events
+  EVENT_TYPE_APPOINTMENT_CREATED = 40;
+  EVENT_TYPE_APPOINTMENT_CONFIRMED = 41;
+  EVENT_TYPE_APPOINTMENT_COMPLETED = 42;
+  EVENT_TYPE_APPOINTMENT_CANCELLED = 43;
+  EVENT_TYPE_REVIEW_SUBMITTED = 44;
+}
+
+// ─── Event Envelope ────────────────────────────────────
+// Standard wrapper for all Kafka messages across services
+
+message Event {
+  string event_id = 1;               // UUID
+  EventType event_type = 2;
+  string source = 3;                 // "tarot-reading" | "customer-mgmt" | "caring" | "shop" | "scheduler"
+  string version = 4;                // "1.0"
+  google.protobuf.Timestamp timestamp = 5;
+
+  // Event payload (JSON-like structure for flexibility)
+  google.protobuf.Struct data = 6;
+
+  // Tracing metadata
+  EventMetadata metadata = 7;
+}
+
+message EventMetadata {
+  string correlation_id = 1;         // Request chain correlation
+  string trace_id = 2;              // OpenTelemetry trace ID
+  string customer_id = 3;           // Affected customer (for routing)
+  string actor_id = 4;              // Who triggered the event
+}
+
+// ─── Kafka Topic Mapping ───────────────────────────────
+//
+// | Topic                      | Event Types                        | Consumers              |
+// |----------------------------|------------------------------------|------------------------|
+// | tarot.readings             | READING_COMPLETED, READING_FEEDBACK| Customer, Caring       |
+// | tarot.crisis               | CRISIS_DETECTED                    | Caring (priority)      |
+// | customer.lifecycle         | CUSTOMER_CREATED/UPDATED/TIER      | All services           |
+// | shop.orders                | ORDER_* events                     | Customer, Caring       |
+// | shop.products              | PRODUCT_UPDATED/DELETED            | DAL (graph sync)       |
+// | caring.actions             | CARING_ACTION_* events             | Customer               |
+// | scheduler.appointments     | APPOINTMENT_* events               | Customer, Caring       |

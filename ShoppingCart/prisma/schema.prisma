@@ -1,0 +1,37 @@
+// ShoppingCart — Prisma Schema
+// Source: ARCHITECTURE.md §6.3 (Shopify Headless Minimal)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ShopifyCustomerMap {
+  id                  String   @id @default(uuid())
+  customerId          String   @map("customer_id")
+  shopifyCustomerId   String   @unique @map("shopify_customer_id")
+  shopifyEmail        String?  @map("shopify_email")
+  syncedAt            DateTime? @map("synced_at")
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@map("shopify_customer_map")
+}
+
+model WebhookEventLog {
+  id                  String   @id @default(uuid())
+  shopifyWebhookId    String   @unique @map("shopify_webhook_id")
+  topic               String   // orders/create, orders/paid, etc.
+  shopifyResourceId   String?  @map("shopify_resource_id")
+  payload             Json?
+  processedAt         DateTime? @map("processed_at")
+  status              String   @default("pending") // pending | processed | failed
+  createdAt           DateTime @default(now()) @map("created_at")
+
+  @@index([topic])
+  @@index([status])
+  @@map("webhook_event_log")
+}

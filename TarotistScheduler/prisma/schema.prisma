@@ -1,0 +1,80 @@
+// TarotistScheduler — Prisma Schema
+// Source: ARCHITECTURE.md §6.4
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Tarotist {
+  id            String   @id @default(uuid())
+  name          String
+  bio           String?
+  avatarUrl     String?  @map("avatar_url")
+  specialties   Json     @default("[]")   // ["love","career","spiritual"]
+  rating        Decimal  @default(0)
+  totalReviews  Int      @default(0) @map("total_reviews")
+  hourlyRate    Decimal? @map("hourly_rate")
+  currency      String   @default("TWD")
+  status        String   @default("active") // active | inactive | suspended
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  availabilities Availability[]
+  appointments   Appointment[]
+  reviews        Review[]
+
+  @@map("tarotist")
+}
+
+model Availability {
+  id            String   @id @default(uuid())
+  tarotistId    String   @map("tarotist_id")
+  dayOfWeek     Int?     @map("day_of_week")  // 0=Sunday, 6=Saturday
+  startTime     String   @map("start_time")   // "09:00"
+  endTime       String   @map("end_time")     // "17:00"
+  isRecurring   Boolean  @default(true) @map("is_recurring")
+  specificDate  String?  @map("specific_date") // "2025-03-15" for one-off
+  isAvailable   Boolean  @default(true) @map("is_available")
+
+  tarotist      Tarotist @relation(fields: [tarotistId], references: [id])
+
+  @@map("availability")
+}
+
+model Appointment {
+  id            String   @id @default(uuid())
+  customerId    String   @map("customer_id")
+  tarotistId    String   @map("tarotist_id")
+  startAt       DateTime @map("start_at")
+  endAt         DateTime @map("end_at")
+  type          String   @default("online")  // online | in_person
+  status        String   @default("pending") // pending | confirmed | completed | cancelled | no_show
+  topic         String?
+  meetingUrl    String?  @map("meeting_url")
+  notes         String?
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  tarotist      Tarotist @relation(fields: [tarotistId], references: [id])
+  reviews       Review[]
+
+  @@map("appointment")
+}
+
+model Review {
+  id              String   @id @default(uuid())
+  appointmentId   String   @map("appointment_id")
+  customerId      String   @map("customer_id")
+  tarotistId      String   @map("tarotist_id")
+  rating          Int      // 1-5
+  comment         String?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  appointment     Appointment @relation(fields: [appointmentId], references: [id])
+  tarotist        Tarotist @relation(fields: [tarotistId], references: [id])
+
+  @@map("review")
+}

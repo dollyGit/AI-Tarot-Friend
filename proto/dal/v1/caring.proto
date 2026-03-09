@@ -1,0 +1,70 @@
+syntax = "proto3";
+
+package dal.v1;
+
+option go_package = "dal/v1;dalv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ─── Caring Plan ───────────────────────────────────────
+
+message CaringPlan {
+  string id = 1;
+  string customer_id = 2;
+  string type = 3;                   // "weekly_check" | "mood_followup" | "milestone"
+  string frequency = 4;             // "daily" | "weekly" | "monthly" | "one_time"
+  string channel = 5;               // "email" | "line" | "sms" | "phone"
+  string status = 6;                // "active" | "paused" | "completed" | "cancelled"
+  google.protobuf.Timestamp next_trigger_at = 7;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// ─── Caring Action ─────────────────────────────────────
+
+message CaringAction {
+  string id = 1;
+  string plan_id = 2;
+  string customer_id = 3;
+  string channel = 4;               // "email" | "line" | "sms"
+  string template_id = 5;
+  string content = 6;
+  string status = 7;                // "sent" | "delivered" | "read" | "failed"
+  google.protobuf.Timestamp sent_at = 10;
+}
+
+// ─── Sentiment History ─────────────────────────────────
+
+message SentimentRecord {
+  string id = 1;
+  string customer_id = 2;
+  string source = 3;                // "tarot_reading" | "feedback" | "chat"
+  double score = 4;                 // -1.0 to 1.0
+  string label = 5;                 // "positive" | "neutral" | "negative" | "crisis"
+  string source_ref_id = 6;
+  google.protobuf.Timestamp recorded_at = 10;
+}
+
+// ─── Caring Rule ───────────────────────────────────────
+
+message CaringRule {
+  string id = 1;
+  string name = 2;
+  string condition_json = 3;         // JSON: {"type":"inactivity","days":7}
+  string action_json = 4;           // JSON: {"channel":"line","template":"comeback"}
+  int32 priority = 5;
+  bool is_active = 6;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// ─── Caring Template ───────────────────────────────────
+
+message CaringTemplate {
+  string id = 1;
+  string name = 2;
+  string channel = 3;               // "email" | "line" | "sms"
+  string locale = 4;                // "zh-TW" | "en"
+  string subject = 5;
+  string body = 6;
+  repeated string variables = 7;    // ["customer_name", "last_reading_date"]
+  google.protobuf.Timestamp created_at = 10;
+}

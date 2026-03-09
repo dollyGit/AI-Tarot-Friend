@@ -1,0 +1,85 @@
+syntax = "proto3";
+
+package dal.v1;
+
+option go_package = "dal/v1;dalv1";
+
+import "google/protobuf/timestamp.proto";
+
+// ─── Customer Entity ───────────────────────────────────
+
+message Customer {
+  string id = 1;
+  string email = 2;
+  string display_name = 3;
+  string phone = 4;
+  string locale = 5;                 // "zh-TW" | "en"
+  string tier = 6;                   // "free" | "premium" | "vip"
+  string status = 7;                 // "active" | "suspended" | "deleted"
+
+  // Birth chart data
+  BirthData birth_data = 10;
+
+  // Metadata
+  google.protobuf.Timestamp created_at = 20;
+  google.protobuf.Timestamp updated_at = 21;
+}
+
+message BirthData {
+  string birth_date = 1;             // "1995-06-15"
+  string birth_time = 2;             // "14:30" or empty if unknown
+  string birth_city = 3;
+  double birth_lat = 4;
+  double birth_lng = 5;
+  string zodiac_sign = 6;            // "gemini"
+  string chinese_zodiac = 7;         // "pig"
+  string five_element = 8;           // "fire"
+  string occupation = 9;
+  string industry = 10;
+}
+
+// ─── Customer Contact (Relationship Circle) ────────────
+
+message CustomerContact {
+  string id = 1;
+  string customer_id = 2;
+  string nickname = 3;
+  string relationship = 4;           // "spouse" | "child" | "parent" | "friend" | "partner"
+  BirthData birth_data = 5;
+  string notes = 6;
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// ─── Finance Record ────────────────────────────────────
+
+message FinanceRecord {
+  string id = 1;
+  string customer_id = 2;
+  string type = 3;                   // "purchase" | "refund" | "top_up" | "subscription"
+  string amount = 4;                 // Decimal as string for precision
+  string currency = 5;              // "TWD" | "USD"
+  string reference_id = 6;          // Order ID or subscription ID
+  string description = 7;
+  string status = 8;                 // "pending" | "completed" | "failed" | "reversed"
+  google.protobuf.Timestamp created_at = 10;
+}
+
+// ─── Tag ───────────────────────────────────────────────
+
+message Tag {
+  string id = 1;
+  string name = 2;
+  string category = 3;              // "interest" | "behavior" | "demographic" | "custom"
+  string color = 4;
+}
+
+// ─── Customer Note ─────────────────────────────────────
+
+message CustomerNote {
+  string id = 1;
+  string customer_id = 2;
+  string author_id = 3;
+  string content = 4;
+  string category = 5;              // "general" | "support" | "reading" | "care"
+  google.protobuf.Timestamp created_at = 10;
+}

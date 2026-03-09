@@ -1,0 +1,254 @@
+// AI Tarot Friend - Database Schema
+// Following data-model.md specification
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [vector]
+}
+
+// ============================================================================
+// REFERENCE DATA
+// ============================================================================
+
+model Card {
+  id               Int      @id @default(autoincrement())
+  arcana_type      String   @db.VarChar(10) // 'major' or 'minor'
+  suit             String?  @db.VarChar(20) // null for major arcana
+  name_en          String   @db.VarChar(100)
+  name_zh          String   @db.VarChar(100)
+  upright_meaning  String   @db.Text
+  reversed_meaning String   @db.Text
+  imagery_url      String?  @db.VarChar(500)
+  order            Int // 0-77 for deck order
+  created_at       DateTime @default(now()) @db.Timestamptz
+  updated_at       DateTime @updatedAt @db.Timestamptz
+
+  @@index([arcana_type])
+  @@map("cards")
+}
+
+model Spread {
+  id               String   @id @default(uuid()) @db.Uuid
+  name             String   @db.VarChar(50) // '1-card', '3-card', '7-card', 'celtic-cross'
+  display_name_en  String   @db.VarChar(100)
+  display_name_zh  String   @db.VarChar(100)
+  card_count       Int
+  position_meanings Json    // Array of {position: number, meaning_en: string, meaning_zh: string}
+  premium_only     Boolean  @default(false)
+  created_at       DateTime @default(now()) @db.Timestamptz
+  updated_at       DateTime @updatedAt @db.Timestamptz
+
+  @@map("spreads")
+}
+
+// ============================================================================
+// USER MANAGEMENT
+// ============================================================================
+
+model User {
+  id              String         @id @default(uuid()) @db.Uuid
+  email           String?        @unique @db.VarChar(255)
+  line_id         String?        @unique @db.VarChar(100)
+  display_name    String?        @db.VarChar(100)
+  locale          String         @default("zh-TW") @db.VarChar(10)
+  status          String         @default("active") @db.VarChar(20) // 'active', 'suspended', 'deleted'
+  created_at      DateTime       @default(now()) @db.Timestamptz
+  updated_at      DateTime       @updatedAt @db.Timestamptz
+  last_login_at   DateTime?      @db.Timestamptz
+
+  sessions        Session[]
+  subscriptions   Subscription[]
+  memories        Memory[]
+  nudges          Nudge[]
+  audit_logs      AuditLog[]
+  reading_feedback ReadingFeedback[]
+
+  @@index([email])
+  @@index([line_id])
+  @@index([status])
+  @@map("users")
+}
+
+model Subscription {
+  id           String    @id @default(uuid()) @db.Uuid
+  user_id      String    @db.Uuid
+  plan_id      String    @db.Uuid
+  platform     String    @db.VarChar(20) // 'web', 'ios', 'android'
+  status       String    @db.VarChar(20) // 'active', 'canceled', 'expired', 'past_due'
+  start_at     DateTime  @db.Timestamptz
+  end_at       DateTime? @db.Timestamptz
+  auto_renew   Boolean   @default(true)
+  payment_id   String?   @db.VarChar(255) // Stripe subscription ID or IAP transaction ID
+  created_at   DateTime  @default(now()) @db.Timestamptz
+  updated_at   DateTime  @updatedAt @db.Timestamptz
+
+  user User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  plan Plan  @relation(fields: [plan_id], references: [id])
+
+  @@index([user_id])
+  @@index([status])
+  @@index([end_at])
+  @@map("subscriptions")
+}
+
+model Plan {
+  id               String         @id @default(uuid()) @db.Uuid
+  name             String         @db.VarChar(50) // 'free', 'premium-monthly', 'premium-yearly'
+  display_name_en  String         @db.VarChar(100)
+  display_name_zh  String         @db.VarChar(100)
+  price_cents      Int            @default(0) // 0 for free tier
+  currency         String         @default("USD") @db.VarChar(3)
+  interval         String?        @db.VarChar(20) // null for free, 'month', 'year'
+  features         Json           // {single_card_daily: 3, three_card_daily: 1, unlimited: false, ...}
+  stripe_price_id  String?        @db.VarChar(100)
+  active           Boolean        @default(true)
+  created_at       DateTime       @default(now()) @db.Timestamptz
+  updated_at       DateTime       @updatedAt @db.Timestamptz
+
+  subscriptions Subscription[]
+
+  @@index([active])
+  @@map("plans")
+}
+
+// ============================================================================
+// READING SESSIONS
+// ============================================================================
+
+model Session {
+  id            String       @id @default(uuid()) @db.Uuid
+  user_id       String       @db.Uuid
+  channel       String       @db.VarChar(20) // 'web', 'mobile', 'line'
+  sentiment     Json?        // {score: number, label: string, confidence: number, crisis_level: string}
+  topic_tags    String[]     @db.VarChar(50)
+  quota_consumed Json?        // {single_card: number, three_card: number, seven_card: number}
+  created_at    DateTime     @default(now()) @db.Timestamptz
+  updated_at    DateTime     @updatedAt @db.Timestamptz
+
+  user        User          @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  tarot_draws TarotDraw[]
+  memories    Memory[]
+
+  @@index([user_id, created_at])
+  @@map("sessions")
+}
+
+model TarotDraw {
+  id              String    @id @default(uuid()) @db.Uuid
+  session_id      String    @db.Uuid
+  spread_type     String    @db.VarChar(50)
+  cards           Json      // Array of {card_id: number, position: number, orientation: 'upright'|'reversed'}
+  interpretation  Json      // {tldr: string, key_points: string[], advice: {...}, warnings: string}
+  seed            String?   @db.VarChar(100) // For reproducible draws (premium feature)
+  token_count     Int?      // LLM tokens consumed
+  created_at      DateTime  @default(now()) @db.Timestamptz
+
+  session  Session           @relation(fields: [session_id], references: [id], onDelete: Cascade)
+  feedback ReadingFeedback[]
+
+  @@index([session_id])
+  @@index([created_at])
+  @@map("tarot_draws")
+}
+
+model ReadingFeedback {
+  id            String    @id @default(uuid()) @db.Uuid
+  tarot_draw_id String    @db.Uuid
+  user_id       String    @db.Uuid
+  rating        Int       // 1-5 stars
+  comment       String?   @db.Text
+  created_at    DateTime  @default(now()) @db.Timestamptz
+
+  tarot_draw TarotDraw @relation(fields: [tarot_draw_id], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([tarot_draw_id])
+  @@index([user_id])
+  @@map("reading_feedback")
+}
+
+// ============================================================================
+// MEMORY SYSTEM
+// ============================================================================
+
+model Memory {
+  id         String                    @id @default(uuid()) @db.Uuid
+  user_id    String                    @db.Uuid
+  session_id String                    @db.Uuid
+  summary    String                    @db.Text
+  embedding  Unsupported("vector(1536)")?
+  metadata   Json                      // {life_area: string, scope: string, date: string}
+  created_at DateTime                  @default(now()) @db.Timestamptz
+
+  user    User    @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  session Session @relation(fields: [session_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([session_id])
+  @@map("memories")
+}
+
+// ============================================================================
+// PROACTIVE OUTREACH
+// ============================================================================
+
+model Nudge {
+  id           String    @id @default(uuid()) @db.Uuid
+  user_id      String    @db.Uuid
+  trigger_type String    @db.VarChar(30) // 'inactivity_7d', 'mood_decline', 'weekly_summary', 'monthly_summary'
+  template_id  String?   @db.VarChar(50)
+  channel      String    @db.VarChar(20) // 'email', 'line'
+  status       String    @default("pending") @db.VarChar(20) // 'pending', 'sent', 'failed', 'clicked'
+  sent_at      DateTime? @db.Timestamptz
+  clicked_at   DateTime? @db.Timestamptz
+  created_at   DateTime  @default(now()) @db.Timestamptz
+
+  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@index([user_id])
+  @@index([status])
+  @@index([sent_at])
+  @@map("nudges")
+}
+
+model Event {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String?  @db.Uuid
+  type       String   @db.VarChar(50) // 'conversation.started', 'reading.completed', etc.
+  payload    Json
+  ts         DateTime @default(now()) @db.Timestamptz
+
+  @@index([user_id])
+  @@index([type])
+  @@index([ts])
+  @@map("events")
+}
+
+// ============================================================================
+// AUDIT & COMPLIANCE
+// ============================================================================
+
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  user_id    String?  @db.Uuid
+  actor      String   @db.VarChar(50) // 'user', 'admin', 'system'
+  action     String   @db.VarChar(50) // 'read', 'create', 'update', 'delete'
+  resource   String   @db.VarChar(50) // 'user', 'subscription', 'reading'
+  resource_id String? @db.Uuid
+  details    Json?
+  ip_address String?  @db.VarChar(45)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  user User? @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  @@index([user_id])
+  @@index([action])
+  @@index([created_at])
+  @@map("audit_logs")
+}

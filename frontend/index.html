@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maya — Finding the Light</title>
+<meta name="description" content="透過塔羅的智慧與日常小練習，重新找到內在的光。Maya 陪你走過每一個迷惘時刻。">
+
+<!-- Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&family=Cinzel:wght@400;600;700&family=Inter:wght@300;400;500&family=Noto+Sans+TC:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- Lucide Icons -->
+<script src="https://unpkg.com/lucide@latest"></script>
+
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        forest: {
+          deepest: '#050f0b',
+          deep: '#0a1a15',
+          mid: '#0d2b1f',
+          surface: '#153d2b',
+          light: '#1a5c40',
+          glow: '#1e7a52',
+        },
+        gold: {
+          DEFAULT: '#c9a84c',
+          light: '#e8d48b',
+          cream: '#f5e6c8',
+          dim: '#8a7535',
+        },
+        teal: {
+          DEFAULT: '#00D4AA',
+          light: '#4DDFC4',
+          dark: '#00BFA5',
+        },
+        maya: {
+          text: '#f0ede6',
+          muted: '#a8a090',
+          dim: '#6b6560',
+        },
+      },
+      fontFamily: {
+        display: ['Cinzel Decorative', 'serif'],
+        heading: ['Cinzel', 'serif'],
+        sans: ['Noto Sans TC', 'Inter', 'sans-serif'],
+      },
+      animation: {
+        'float': 'float 6s ease-in-out infinite',
+        'fade-in': 'fadeIn 0.6s ease-out forwards',
+        'fade-in-up': 'fadeInUp 0.8s ease-out forwards',
+        'slow-rotate': 'slowRotate 25s linear infinite',
+        'cloud-drift-1': 'cloudDrift1 35s ease-in-out infinite',
+        'cloud-drift-2': 'cloudDrift2 45s ease-in-out infinite',
+        'pulse-glow': 'pulseGlow 4s ease-in-out infinite',
+        'scroll-bounce': 'scrollBounce 2.5s ease-in-out infinite',
+        'shimmer': 'shimmer 3s ease-in-out infinite',
+      },
+      keyframes: {
+        float: {
+          '0%, 100%': { transform: 'translateY(0)' },
+          '50%': { transform: 'translateY(-12px)' },
+        },
+        fadeIn: {
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
+        },
+        fadeInUp: {
+          '0%': { opacity: '0', transform: 'translateY(30px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slowRotate: {
+          '0%': { transform: 'rotate(0deg)' },
+          '100%': { transform: 'rotate(360deg)' },
+        },
+        cloudDrift1: {
+          '0%, 100%': { transform: 'translateX(0) translateY(0)', opacity: '0.5' },
+          '50%': { transform: 'translateX(-30px) translateY(-15px)', opacity: '0.7' },
+        },
+        cloudDrift2: {
+          '0%, 100%': { transform: 'translateX(0) translateY(0)', opacity: '0.4' },
+          '50%': { transform: 'translateX(25px) translateY(-10px)', opacity: '0.6' },
+        },
+        pulseGlow: {
+          '0%, 100%': { opacity: '0.4', transform: 'scale(1)' },
+          '50%': { opacity: '0.7', transform: 'scale(1.05)' },
+        },
+        scrollBounce: {
+          '0%, 100%': { transform: 'translateY(0)', opacity: '0.6' },
+          '50%': { transform: 'translateY(8px)', opacity: '1' },
+        },
+        shimmer: {
+          '0%': { backgroundPosition: '-200% 0' },
+          '100%': { backgroundPosition: '200% 0' },
+        },
+      },
+    },
+  },
+}
+</script>
+
+<style>
+/* ═══════════════════════════════════════════════════════════
+   CSS Custom Properties
+   ═══════════════════════════════════════════════════════════ */
+:root {
+  --forest-deepest: #050f0b;
+  --forest-deep: #0a1a15;
+  --forest-mid: #0d2b1f;
+  --forest-surface: #153d2b;
+  --forest-light: #1a5c40;
+  --gold: #c9a84c;
+  --gold-light: #e8d48b;
+  --gold-cream: #f5e6c8;
+  --teal: #00D4AA;
+  --teal-light: #4DDFC4;
+  --text-primary: #f0ede6;
+  --text-muted: #a8a090;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Base Resets
+   ═══════════════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--forest-deep); color: var(--text-primary); }
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold), var(--teal));
+  border-radius: 3px;
+}
+* { scrollbar-width: thin; scrollbar-color: var(--gold) transparent; }
+
+/* ═══════════════════════════════════════════════════════════
+   Noise Overlay
+   ═══════════════════════════════════════════════════════════ */
+.noise-overlay::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  opacity: 0.15;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Page Background Gradient
+   ═══════════════════════════════════════════════════════════ */
+.page-bg {
+  background: linear-gradient(180deg,
+    #0a1a15 0%,
+    #0d2b1f 25%,
+    #0a1a15 50%,
+    #0d2b1f 75%,
+    #050f0b 100%
+  );
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Navigation
+   ═══════════════════════════════════════════════════════════ */
+.nav-main {
+  background: rgba(5, 15, 11, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(201, 168, 76, 0.12);
+  transition: background 0.3s ease, border-color 0.3s ease;
+}
+.nav-main.nav-scrolled {
+  background: rgba(5, 15, 11, 0.95);
+  border-bottom-color: rgba(201, 168, 76, 0.25);
+}
+.nav-link {
+  font-family: 'Cinzel', serif;
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  text-decoration: none;
+  transition: color 0.3s;
+  padding: 0.5rem 0;
+}
+.nav-link:hover { color: var(--gold-cream); }
+
+/* Mobile menu */
+.mobile-menu {
+  background: rgba(5, 15, 11, 0.97);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Hero Atmospheric Effects
+   ═══════════════════════════════════════════════════════════ */
+.hero-atmosphere {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.cloud-layer-1 {
+  position: absolute;
+  top: 5%;
+  left: -20%;
+  width: 140%;
+  height: 60%;
+  background:
+    radial-gradient(ellipse at 25% 50%, rgba(13,43,31,0.8) 0%, transparent 55%),
+    radial-gradient(ellipse at 75% 40%, rgba(21,61,43,0.6) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 80%, rgba(10,26,21,0.9) 0%, transparent 60%);
+  filter: blur(30px);
+  animation: cloudDrift1 35s ease-in-out infinite;
+}
+
+.cloud-layer-2 {
+  position: absolute;
+  top: -10%;
+  left: -10%;
+  width: 120%;
+  height: 70%;
+  background:
+    radial-gradient(ellipse at 60% 30%, rgba(26,92,64,0.35) 0%, transparent 45%),
+    radial-gradient(ellipse at 30% 60%, rgba(21,61,43,0.45) 0%, transparent 50%);
+  filter: blur(40px);
+  animation: cloudDrift2 45s ease-in-out infinite;
+}
+
+.cloud-layer-3 {
+  position: absolute;
+  top: 15%;
+  left: 10%;
+  width: 80%;
+  height: 40%;
+  background:
+    radial-gradient(ellipse at 50% 50%, rgba(200,200,200,0.04) 0%, transparent 50%);
+  filter: blur(50px);
+}
+
+/* Light rays behind card */
+.light-rays {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -55%);
+  background: conic-gradient(
+    from 0deg,
+    transparent 0deg,
+    rgba(201,168,76,0.06) 15deg,
+    transparent 30deg,
+    rgba(0,212,170,0.04) 60deg,
+    transparent 75deg,
+    rgba(201,168,76,0.05) 105deg,
+    transparent 120deg,
+    rgba(0,212,170,0.03) 150deg,
+    transparent 165deg,
+    rgba(201,168,76,0.06) 195deg,
+    transparent 210deg,
+    rgba(0,212,170,0.04) 240deg,
+    transparent 255deg,
+    rgba(201,168,76,0.05) 285deg,
+    transparent 300deg,
+    rgba(0,212,170,0.03) 330deg,
+    transparent 345deg,
+    rgba(201,168,76,0.06) 360deg
+  );
+  filter: blur(20px);
+  animation: slowRotate 25s linear infinite;
+}
+
+@media (max-width: 767px) {
+  .light-rays { width: 340px; height: 340px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Hero Tarot Card
+   ═══════════════════════════════════════════════════════════ */
+.hero-card {
+  width: 200px;
+  height: 320px;
+  position: relative;
+  border-radius: 16px;
+  border: 2px solid rgba(201, 168, 76, 0.5);
+  background: linear-gradient(165deg, #0d2b1f 0%, #0a1a15 40%, #153d2b 100%);
+  box-shadow:
+    0 0 40px rgba(0,212,170,0.15),
+    0 0 80px rgba(201,168,76,0.1),
+    0 20px 60px rgba(0,0,0,0.4);
+  overflow: hidden;
+}
+.hero-card::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(201, 168, 76, 0.25);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+@media (min-width: 768px) {
+  .hero-card { width: 240px; height: 380px; }
+}
+@media (min-width: 1024px) {
+  .hero-card { width: 260px; height: 400px; }
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Ornamental Decorations
+   ═══════════════════════════════════════════════════════════ */
+.ornament-line {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  justify-content: center;
+}
+.ornament-line::before,
+.ornament-line::after {
+  content: '';
+  flex: 0 0 auto;
+  width: 80px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+@media (min-width: 768px) {
+  .ornament-line::before,
+  .ornament-line::after { width: 120px; }
+}
+
+/* Star ornament for section dividers */
+.ornament-star {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background: var(--gold);
+  transform: rotate(45deg);
+  opacity: 0.6;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Category Cards
+   ═══════════════════════════════════════════════════════════ */
+.category-card {
+  background: linear-gradient(145deg, rgba(21,61,43,0.35), rgba(10,26,21,0.6));
+  border: 1px solid rgba(201,168,76,0.15);
+  border-radius: 14px;
+  padding: 1.25rem 1rem;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.category-card:hover {
+  border-color: rgba(201,168,76,0.45);
+  background: linear-gradient(145deg, rgba(21,61,43,0.5), rgba(13,43,31,0.7));
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.3);
+}
+.category-card.active {
+  border-color: var(--teal);
+  box-shadow: 0 0 20px rgba(0,212,170,0.15);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Blessing Cards
+   ═══════════════════════════════════════════════════════════ */
+.blessing-card {
+  background: linear-gradient(145deg, rgba(19,74,50,0.3), rgba(10,26,21,0.7));
+  border: 1px solid rgba(201,168,76,0.12);
+  border-radius: 18px;
+  padding: 2rem;
+  transition: border-color 0.3s ease;
+}
+.blessing-card:hover {
+  border-color: rgba(201,168,76,0.3);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Featured Tarot Card (Self-Exploration)
+   ═══════════════════════════════════════════════════════════ */
+.featured-card {
+  position: relative;
+  border-radius: 16px;
+  border: 2px solid rgba(201,168,76,0.4);
+  background: linear-gradient(165deg, #0d2b1f 0%, #0a1a15 50%, #153d2b 100%);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.4), 0 0 30px rgba(201,168,76,0.08);
+  overflow: hidden;
+  padding: 1.5rem;
+}
+.featured-card::before {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 10px;
+  pointer-events: none;
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Input Styling
+   ═══════════════════════════════════════════════════════════ */
+.maya-input {
+  background: rgba(10,26,21,0.8);
+  border: 1px solid rgba(201,168,76,0.2);
+  border-radius: 12px;
+  padding: 0.875rem 1.25rem;
+  color: var(--text-primary);
+  font-family: 'Noto Sans TC', 'Inter', sans-serif;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  width: 100%;
+}
+.maya-input::placeholder {
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+.maya-input:focus {
+  border-color: var(--teal);
+  box-shadow: 0 0 0 2px rgba(0,212,170,0.15), 0 0 20px rgba(0,212,170,0.1);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Scroll Reveal
+   ═══════════════════════════════════════════════════════════ */
+.reveal {
+  opacity: 0;
+  transform: translateY(35px);
+  transition: opacity 0.8s ease-out, transform 0.8s ease-out;
+}
+.reveal.in-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ═══════════════════════════════════════════════════════════
+   Teal Text Highlight
+   ═══════════════════════════════════════════════════════════ */
+.text-highlight {
+  color: var(--teal);
+  text-shadow: 0 0 20px rgba(0,212,170,0.2);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   Reduced Motion
+   ═══════════════════════════════════════════════════════════ */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .reveal { opacity: 1; transform: none; }
+}
+</style>
+</head>
+
+<body class="page-bg noise-overlay">
+
+<!-- ═══════════════════════════════════════════════════════════
+     NAVIGATION
+     ═══════════════════════════════════════════════════════════ -->
+<nav class="nav-main fixed top-0 left-0 right-0 z-50">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+
+      <!-- Left: Nav links (desktop) -->
+      <div class="hidden lg:flex items-center gap-8">
+        <a href="#hero" class="nav-link">Daily Tarot</a>
+        <a href="#self-exploration" class="nav-link">Self-Exploration</a>
+        <a href="#daily-blessings" class="nav-link">Daily Blessings</a>
+      </div>
+
+      <!-- Mobile: Hamburger -->
+      <button id="menuToggle" class="lg:hidden flex items-center justify-center w-10 h-10 text-maya-muted hover:text-gold-cream transition-colors" aria-label="Toggle menu">
+        <i data-lucide="menu" class="w-5 h-5"></i>
+      </button>
+
+      <!-- Center: Logo -->
+      <div class="absolute left-1/2 -translate-x-1/2 flex flex-col items-center">
+        <svg width="24" height="20" viewBox="0 0 24 20" fill="none" class="mb-0.5 opacity-70">
+          <path d="M12 0L14.5 6L21 7.5L16 12L17 19L12 16L7 19L8 12L3 7.5L9.5 6L12 0Z" fill="url(#logoGrad)" />
+          <defs><linearGradient id="logoGrad" x1="3" y1="0" x2="21" y2="19"><stop stop-color="#c9a84c"/><stop offset="1" stop-color="#00D4AA"/></linearGradient></defs>
+        </svg>
+        <span class="font-display text-gold-cream text-base tracking-[0.2em]" style="font-size:0.9rem;">Maya</span>
+      </div>
+
+      <!-- Right: Nav links (desktop) -->
+      <div class="hidden lg:flex items-center gap-8">
+        <a href="#brand-philosophy" class="nav-link">Brand Philosophy</a>
+        <button class="flex items-center gap-1.5 nav-link">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>EN</span>
+        </button>
+      </div>
+
+      <!-- Mobile: spacer -->
+      <div class="lg:hidden w-10"></div>
+    </div>
+  </div>
+
+  <!-- Mobile Menu Overlay -->
+  <div id="mobileMenu" class="mobile-menu hidden lg:hidden border-t border-gold/10">
+    <div class="px-6 py-6 space-y-4">
+      <a href="#hero" class="nav-link block text-center text-sm">Daily Tarot</a>
+      <a href="#self-exploration" class="nav-link block text-center text-sm">Self-Exploration</a>
+      <a href="#daily-blessings" class="nav-link block text-center text-sm">Daily Blessings</a>
+      <a href="#brand-philosophy" class="nav-link block text-center text-sm">Brand Philosophy</a>
+      <div class="flex justify-center pt-2">
+        <button class="flex items-center gap-1.5 nav-link text-sm">
+          <i data-lucide="globe" class="w-3.5 h-3.5"></i>
+          <span>EN</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     HERO SECTION — FINDING THE LIGHT
+     ═══════════════════════════════════════════════════════════ -->
+<section id="hero" class="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-16">
+
+  <!-- Atmospheric layers -->
+  <div class="hero-atmosphere">
+    <div class="cloud-layer-1"></div>
+    <div class="cloud-layer-2"></div>
+    <div class="cloud-layer-3"></div>
+  </div>
+
+  <!-- Content -->
+  <div class="relative z-10 flex flex-col items-center text-center px-6">
+
+    <!-- Main heading -->
+    <h1 class="font-display text-gold-cream text-4xl sm:text-5xl md:text-6xl lg:text-7xl tracking-[0.12em] leading-tight mb-3 animate-fade-in">
+      FINDING<br class="sm:hidden"> THE LIGHT
+    </h1>
+    <p class="font-heading text-maya-muted text-sm sm:text-base tracking-[0.25em] mb-12 sm:mb-16 animate-fade-in" style="animation-delay:0.2s;opacity:0;">
+      FOR TODAY AND TOMORROW.
+    </p>
+
+    <!-- Floating tarot card -->
+    <div class="relative mb-10 sm:mb-14 animate-float">
+      <!-- Light rays -->
+      <div class="light-rays"></div>
+
+      <!-- Card -->
+      <div class="hero-card relative z-10 flex flex-col items-center justify-center">
+        <!-- Card face SVG: celestial star motif -->
+        <svg viewBox="0 0 200 300" class="w-full h-full absolute inset-0 opacity-90" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <radialGradient id="cardGlow" cx="50%" cy="40%" r="50%">
+              <stop offset="0%" stop-color="#1a5c40" stop-opacity="0.8"/>
+              <stop offset="100%" stop-color="#0a1a15" stop-opacity="0"/>
+            </radialGradient>
+            <linearGradient id="starGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#c9a84c"/>
+              <stop offset="100%" stop-color="#00D4AA"/>
+            </linearGradient>
+          </defs>
+          <rect width="200" height="300" fill="url(#cardGlow)"/>
+          <!-- Decorative circles -->
+          <circle cx="100" cy="120" r="60" fill="none" stroke="rgba(201,168,76,0.2)" stroke-width="0.5"/>
+          <circle cx="100" cy="120" r="45" fill="none" stroke="rgba(0,212,170,0.15)" stroke-width="0.5"/>
+          <circle cx="100" cy="120" r="30" fill="none" stroke="rgba(201,168,76,0.25)" stroke-width="0.5"/>
+          <!-- Central star -->
+          <polygon points="100,70 108,100 138,105 115,125 120,155 100,140 80,155 85,125 62,105 92,100"
+            fill="url(#starGrad)" opacity="0.4"/>
+          <polygon points="100,80 106,100 128,104 112,118 116,140 100,130 84,140 88,118 72,104 94,100"
+            fill="url(#starGrad)" opacity="0.6"/>
+          <!-- Small decorative stars -->
+          <circle cx="65" cy="75" r="2" fill="#c9a84c" opacity="0.4"/>
+          <circle cx="140" cy="85" r="1.5" fill="#00D4AA" opacity="0.3"/>
+          <circle cx="75" cy="170" r="1.5" fill="#c9a84c" opacity="0.3"/>
+          <circle cx="130" cy="180" r="2" fill="#00D4AA" opacity="0.35"/>
+          <circle cx="55" cy="200" r="1" fill="#e8d48b" opacity="0.3"/>
+          <circle cx="150" cy="210" r="1.5" fill="#e8d48b" opacity="0.25"/>
+          <!-- Bottom ornament line -->
+          <line x1="60" y1="230" x2="140" y2="230" stroke="rgba(201,168,76,0.2)" stroke-width="0.5"/>
+          <line x1="70" y1="240" x2="130" y2="240" stroke="rgba(201,168,76,0.15)" stroke-width="0.5"/>
+          <!-- Corner ornaments -->
+          <path d="M20,20 L20,40 M20,20 L40,20" stroke="rgba(201,168,76,0.3)" stroke-width="0.8" fill="none"/>
+          <path d="M180,20 L180,40 M180,20 L160,20" stroke="rgba(201,168,76,0.3)" stroke-width="0.8" fill="none"/>
+          <path d="M20,280 L20,260 M20,280 L40,280" stroke="rgba(201,168,76,0.3)" stroke-width="0.8" fill="none"/>
+          <path d="M180,280 L180,260 M180,280 L160,280" stroke="rgba(201,168,76,0.3)" stroke-width="0.8" fill="none"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Welcome text -->
+    <p class="font-heading text-maya-muted text-xs sm:text-sm tracking-[0.35em] uppercase mb-8 animate-fade-in" style="animation-delay:0.5s;opacity:0;">
+      Welcome to Maya
+    </p>
+
+    <!-- Scroll indicator -->
+    <button id="scrollDown" class="absolute bottom-8 sm:bottom-12 left-1/2 -translate-x-1/2 flex flex-col items-center gap-2 group" aria-label="Scroll down">
+      <div class="w-10 h-10 rounded-full border border-gold/30 flex items-center justify-center animate-scroll-bounce group-hover:border-gold/60 transition-colors">
+        <i data-lucide="chevron-down" class="w-4 h-4 text-gold/60 group-hover:text-gold transition-colors"></i>
+      </div>
+    </button>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     SELF-EXPLORATION — THEMATIC READINGS
+     ═══════════════════════════════════════════════════════════ -->
+<section id="self-exploration" class="relative py-20 sm:py-28 lg:py-32">
+  <div class="max-w-7xl mx-auto px-5 sm:px-8 lg:px-12">
+
+    <!-- Section header -->
+    <div class="text-center mb-12 sm:mb-16">
+      <p class="reveal font-heading text-gold/70 text-xs tracking-[0.35em] uppercase mb-3">Thematic Readings</p>
+      <h2 class="reveal reveal-delay-1 font-display text-gold-cream text-3xl sm:text-4xl lg:text-5xl tracking-[0.1em]">
+        SELF - EXPLORATION
+      </h2>
+    </div>
+
+    <!-- Two-column layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-16 items-start">
+
+      <!-- Left: Featured Tarot Card (order-2 on mobile, order-1 on desktop) -->
+      <div class="reveal reveal-delay-2 order-2 lg:order-1">
+        <div class="featured-card max-w-sm mx-auto lg:mx-0">
+          <!-- Card content -->
+          <div class="relative z-10">
+            <p class="font-display text-gold text-xs tracking-[0.3em] mb-1 opacity-80" style="font-style:italic;">NO.17</p>
+            <h3 class="font-display text-gold-cream text-lg sm:text-xl tracking-[0.08em] mb-0.5">THE STAR</h3>
+            <p class="font-heading text-maya-muted text-xs tracking-[0.2em] mb-6">/ L'ETOILE</p>
+
+            <!-- Card illustration -->
+            <div class="relative w-full aspect-[3/4] mb-6 rounded-lg overflow-hidden" style="background: linear-gradient(165deg, #0d2b1f, #0a1a15 50%, #153d2b);">
+              <svg viewBox="0 0 300 400" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
+                <defs>
+                  <radialGradient id="starBg" cx="50%" cy="35%" r="50%">
+                    <stop offset="0%" stop-color="#1a5c40" stop-opacity="0.6"/>
+                    <stop offset="100%" stop-color="#0a1a15" stop-opacity="0"/>
+                  </radialGradient>
+                  <linearGradient id="figGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stop-color="#e8d48b"/>
+                    <stop offset="100%" stop-color="#c9a84c"/>
+                  </linearGradient>
+                </defs>
+                <rect width="300" height="400" fill="url(#starBg)"/>
+                <!-- Large central star -->
+                <polygon points="150,60 162,110 210,118 175,148 183,196 150,175 117,196 125,148 90,118 138,110" fill="none" stroke="url(#figGrad)" stroke-width="1.5" opacity="0.6"/>
+                <polygon points="150,80 158,110 195,116 170,138 176,175 150,160 124,175 130,138 105,116 142,110" fill="url(#figGrad)" opacity="0.15"/>
+                <!-- Radiating lines -->
+                <line x1="150" y1="60" x2="150" y2="20" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+                <line x1="210" y1="118" x2="250" y2="105" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+                <line x1="90" y1="118" x2="50" y2="105" stroke="#c9a84c" stroke-width="0.5" opacity="0.3"/>
+                <line x1="183" y1="196" x2="210" y2="225" stroke="#c9a84c" stroke-width="0.5" opacity="0.2"/>
+                <line x1="117" y1="196" x2="90" y2="225" stroke="#c9a84c" stroke-width="0.5" opacity="0.2"/>
+                <!-- Figure silhouette (simplified) -->
+                <ellipse cx="150" cy="280" rx="40" ry="55" fill="url(#figGrad)" opacity="0.08"/>
+                <circle cx="150" cy="240" r="15" fill="url(#figGrad)" opacity="0.1"/>
+                <!-- Decorative dots -->
+                <circle cx="80" cy="70" r="2" fill="#c9a84c" opacity="0.4"/>
+                <circle cx="230" cy="80" r="2.5" fill="#00D4AA" opacity="0.3"/>
+                <circle cx="60" cy="250" r="1.5" fill="#e8d48b" opacity="0.3"/>
+                <circle cx="240" cy="270" r="2" fill="#00D4AA" opacity="0.25"/>
+                <circle cx="110" cy="320" r="1.5" fill="#c9a84c" opacity="0.2"/>
+                <circle cx="200" cy="340" r="1" fill="#e8d48b" opacity="0.25"/>
+                <!-- Outer frame ornaments -->
+                <rect x="15" y="15" width="270" height="370" rx="6" fill="none" stroke="rgba(201,168,76,0.15)" stroke-width="0.5"/>
+              </svg>
+            </div>
+
+            <!-- Card meaning -->
+            <p class="font-sans text-maya-muted text-sm leading-relaxed">
+              如果你正處於轉職、創業的迷惘期，這張牌是極大的吉兆。代表你的直覺與方向是正確的。
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Categories + Input (order-1 on mobile, order-2 on desktop) -->
+      <div class="order-1 lg:order-2">
+
+        <!-- "I WISH TO KNOW..." heading -->
+        <div class="reveal ornament-line mb-8 sm:mb-10">
+          <span class="font-heading text-gold-light text-sm sm:text-base tracking-[0.2em]">I WISH TO KNOW...</span>
+        </div>
+
+        <!-- Category cards grid -->
+        <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-10">
+          <button class="reveal reveal-delay-1 category-card group" data-category="love">
+            <div class="flex flex-col items-center gap-2.5">
+              <i data-lucide="heart" class="w-6 h-6 text-gold/70 group-hover:text-gold transition-colors"></i>
+              <span class="font-sans text-maya-text text-sm font-medium">愛情與關係</span>
+              <span class="font-sans text-maya-muted text-xs leading-snug hidden sm:block">探索你與他人的連結</span>
+            </div>
+          </button>
+
+          <button class="reveal reveal-delay-2 category-card group" data-category="career">
+            <div class="flex flex-col items-center gap-2.5">
+              <i data-lucide="landmark" class="w-6 h-6 text-gold/70 group-hover:text-gold transition-colors"></i>
+              <span class="font-sans text-maya-text text-sm font-medium">事業與財運</span>
+              <span class="font-sans text-maya-muted text-xs leading-snug hidden sm:block">找到前進的方向</span>
+            </div>
+          </button>
+
+          <button class="reveal reveal-delay-3 category-card group" data-category="growth">
+            <div class="flex flex-col items-center gap-2.5">
+              <i data-lucide="sprout" class="w-6 h-6 text-gold/70 group-hover:text-gold transition-colors"></i>
+              <span class="font-sans text-maya-text text-sm font-medium">自我成長</span>
+              <span class="font-sans text-maya-muted text-xs leading-snug hidden sm:block">認識更好的自己</span>
+            </div>
+          </button>
+
+          <button class="reveal reveal-delay-4 category-card group" data-category="spiritual">
+            <div class="flex flex-col items-center gap-2.5">
+              <i data-lucide="eye" class="w-6 h-6 text-gold/70 group-hover:text-gold transition-colors"></i>
+              <span class="font-sans text-maya-text text-sm font-medium">靈性指引</span>
+              <span class="font-sans text-maya-muted text-xs leading-snug hidden sm:block">傾聽內心的聲音</span>
+            </div>
+          </button>
+        </div>
+
+        <!-- "LET ME HEAR YOUR STORY" -->
+        <div class="reveal ornament-line mb-6">
+          <span class="font-heading text-gold-light text-xs sm:text-sm tracking-[0.2em]">LET ME HEAR YOUR STORY</span>
+        </div>
+
+        <!-- Question input -->
+        <form id="questionForm" class="reveal flex gap-3">
+          <input id="questionInput" type="text" class="maya-input flex-1" placeholder="輸入您的問題..." autocomplete="off">
+          <button type="submit" class="flex-shrink-0 bg-teal hover:bg-teal-dark text-forest-deepest font-sans font-medium text-sm px-6 py-3 rounded-xl transition-colors">
+            提出
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     DAILY BLESSINGS
+     ═══════════════════════════════════════════════════════════ -->
+<section id="daily-blessings" class="relative py-20 sm:py-28" style="background: linear-gradient(180deg, rgba(5,15,11,0.6) 0%, rgba(10,26,21,0.9) 15%, rgba(10,26,21,0.9) 85%, rgba(5,15,11,0.6) 100%);">
+  <div class="max-w-6xl mx-auto px-5 sm:px-8 lg:px-12">
+
+    <!-- Section heading -->
+    <div class="reveal text-center mb-12 sm:mb-16">
+      <div class="ornament-line">
+        <h2 class="font-display text-gold-cream text-2xl sm:text-3xl lg:text-4xl tracking-[0.1em]">
+          DAILY BLESSINGS
+        </h2>
+      </div>
+    </div>
+
+    <!-- Two blessing cards -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
+
+      <!-- Card 1 -->
+      <article class="reveal reveal-delay-1 blessing-card">
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="heart" class="w-3.5 h-3.5 text-gold/60"></i>
+          <span class="font-heading text-gold/70 text-xs tracking-[0.15em] uppercase">心靈小練習｜關心</span>
+        </div>
+        <h3 class="font-sans text-maya-text text-xl sm:text-2xl font-medium mb-4 leading-snug">
+          一分鐘的自我擁抱
+        </h3>
+        <p class="font-sans text-maya-muted text-sm sm:text-base leading-[1.9]">
+          閉上眼睛，把手放在心口。深深地吸一口氣，感受胸腔的起伏。在心裡對自己說：「此刻，我很安全。」慢慢吐氣，讓所有緊繃隨著呼吸離開。
+        </p>
+      </article>
+
+      <!-- Card 2 -->
+      <article class="reveal reveal-delay-2 blessing-card">
+        <div class="flex items-center gap-2 mb-4">
+          <i data-lucide="music" class="w-3.5 h-3.5 text-gold/60"></i>
+          <span class="font-heading text-gold/70 text-xs tracking-[0.15em] uppercase">專題音頻｜理解</span>
+        </div>
+        <h3 class="font-sans text-maya-text text-xl sm:text-2xl font-medium mb-4 leading-snug">
+          今天，我們一起呼吸
+        </h3>
+        <p class="font-sans text-maya-muted text-sm sm:text-base leading-[1.9]">
+          在這個瞬息萬變的世界裡，你並不孤單。此刻，有許多人正和你一樣，在尋找屬於自己的答案。我們的呼吸在空氣中相連，願你今天就能感受到那看不見的溫暖，知道在某個角落，有人正默默為你祝福。
+        </p>
+      </article>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     BRAND PHILOSOPHY
+     ═══════════════════════════════════════════════════════════ -->
+<section id="brand-philosophy" class="relative py-20 sm:py-28 lg:py-32">
+  <div class="max-w-3xl mx-auto px-6 sm:px-8">
+
+    <!-- Section heading -->
+    <div class="reveal text-center mb-14 sm:mb-20">
+      <div class="ornament-line">
+        <h2 class="font-display text-gold-cream text-2xl sm:text-3xl lg:text-4xl tracking-[0.1em]">
+          BRAND PHILOSOPHY
+        </h2>
+      </div>
+    </div>
+
+    <!-- Manifesto -->
+    <div class="reveal space-y-7 sm:space-y-8 text-center">
+      <p class="font-sans text-maya-text text-base sm:text-lg leading-[2] sm:leading-[2.2]">
+        世界轉得太快，快到有時候，我們都忘了<span class="text-highlight">怎麼呼吸</span>。
+      </p>
+      <p class="font-sans text-maya-text text-base sm:text-lg leading-[2] sm:leading-[2.2]">
+        在那些無法承受的瞬間，<span class="text-highlight">你並不孤單</span>。
+      </p>
+      <p class="font-sans text-maya-text text-base sm:text-lg leading-[2] sm:leading-[2.2]">
+        我的初衷很簡單，當你墜落時，這裡有<span class="text-highlight">一雙手</span>。
+      </p>
+      <p class="font-sans text-maya-text text-base sm:text-lg leading-[2] sm:leading-[2.2]">
+        無論生活多麼混亂，我希望能為你整理出一點思緒，<br class="hidden sm:block">
+        陪伴你找到那個突破的出口。
+      </p>
+      <p class="font-sans text-maya-text text-base sm:text-lg leading-[2] sm:leading-[2.2]">
+        每一張牌，都是一次<span class="text-highlight">靈魂的深呼吸</span>。
+      </p>
+      <p class="font-sans text-maya-text text-base sm:text-lg leading-[2] sm:leading-[2.2]">
+        讓我們一起，<span class="text-highlight">把困境變成轉機</span>。
+      </p>
+    </div>
+  </div>
+</section>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     FOOTER
+     ═══════════════════════════════════════════════════════════ -->
+<footer class="relative border-t border-gold/10" style="background: #050f0b;">
+  <div class="max-w-6xl mx-auto px-6 sm:px-8 py-10 sm:py-14">
+
+    <!-- Disclaimer -->
+    <p class="font-sans text-maya-dim text-xs sm:text-sm text-center leading-relaxed mb-8 max-w-2xl mx-auto">
+      本站服務僅供塔羅與心靈參考，不具備醫療、法律或財務諮詢之法律效力。如有專業需求，請諮詢相關領域之專業人士。
+    </p>
+
+    <!-- Social icons -->
+    <div class="flex justify-center gap-5 mb-8">
+      <a href="#" class="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center text-maya-muted hover:text-gold hover:border-gold/50 transition-colors" aria-label="Instagram">
+        <i data-lucide="instagram" class="w-4 h-4"></i>
+      </a>
+      <a href="#" class="w-10 h-10 rounded-full border border-gold/20 flex items-center justify-center text-maya-muted hover:text-gold hover:border-gold/50 transition-colors" aria-label="Line">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 5.82 2 10.5c0 3.69 3.08 6.79 7.24 7.84.28.06.66.18.76.42.08.22.06.56.02.78l-.12.74c-.04.22-.16.86.76.47.92-.4 4.96-2.92 6.76-5C19.56 13.26 22 11.16 22 10.5 22 5.82 17.52 2 12 2z"/>
+        </svg>
+      </a>
+    </div>
+
+    <!-- Legal links -->
+    <div class="flex flex-wrap justify-center gap-2 sm:gap-4 text-center mb-6">
+      <span class="font-sans text-maya-dim text-xs">統一編號（待一編號）</span>
+      <span class="text-maya-dim/30 hidden sm:inline">｜</span>
+      <span class="font-sans text-maya-dim text-xs">營業人名稱</span>
+      <span class="text-maya-dim/30 hidden sm:inline">｜</span>
+      <a href="#" class="font-sans text-maya-dim text-xs hover:text-maya-muted transition-colors">隱私人名稱</a>
+      <span class="text-maya-dim/30 hidden sm:inline">｜</span>
+      <a href="#" class="font-sans text-maya-dim text-xs hover:text-maya-muted transition-colors">隱私人條款</a>
+    </div>
+
+    <!-- Copyright -->
+    <p class="font-sans text-maya-dim text-xs text-center tracking-wider">
+      © 2026 Maya All Rights Reserved.
+    </p>
+  </div>
+</footer>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     JAVASCRIPT
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+  // ── Lucide Icons ────────────────────────────────────────
+  lucide.createIcons();
+
+  // ── Smooth Scroll Navigation ────────────────────────────
+  document.querySelectorAll('a[href^="#"]').forEach(link => {
+    link.addEventListener('click', (e) => {
+      e.preventDefault();
+      const target = document.querySelector(link.getAttribute('href'));
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        // Close mobile menu if open
+        mobileMenu.classList.add('hidden');
+      }
+    });
+  });
+
+  // ── Sticky Nav Scroll Effect ────────────────────────────
+  const nav = document.querySelector('.nav-main');
+  let lastScroll = 0;
+  window.addEventListener('scroll', () => {
+    const scrollY = window.scrollY;
+    if (scrollY > 50) {
+      nav.classList.add('nav-scrolled');
+    } else {
+      nav.classList.remove('nav-scrolled');
+    }
+    lastScroll = scrollY;
+  }, { passive: true });
+
+  // ── Scroll Reveal (IntersectionObserver) ────────────────
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add('in-view');
+        revealObserver.unobserve(entry.target);
+      }
+    });
+  }, {
+    threshold: 0.12,
+    rootMargin: '0px 0px -40px 0px'
+  });
+
+  document.querySelectorAll('.reveal').forEach(el => {
+    revealObserver.observe(el);
+  });
+
+  // ── Scroll Down Button ──────────────────────────────────
+  const scrollDown = document.getElementById('scrollDown');
+  if (scrollDown) {
+    scrollDown.addEventListener('click', () => {
+      document.getElementById('self-exploration')?.scrollIntoView({ behavior: 'smooth' });
+    });
+  }
+
+  // ── Mobile Menu Toggle ──────────────────────────────────
+  const menuToggle = document.getElementById('menuToggle');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (menuToggle && mobileMenu) {
+    menuToggle.addEventListener('click', () => {
+      mobileMenu.classList.toggle('hidden');
+    });
+  }
+
+  // ── Category Card Selection ─────────────────────────────
+  let selectedCategory = null;
+  const categoryCards = document.querySelectorAll('.category-card');
+  categoryCards.forEach(card => {
+    card.addEventListener('click', () => {
+      categoryCards.forEach(c => c.classList.remove('active'));
+      card.classList.add('active');
+      selectedCategory = card.dataset.category;
+    });
+  });
+
+  // ── Question Form ───────────────────────────────────────
+  const questionForm = document.getElementById('questionForm');
+  const questionInput = document.getElementById('questionInput');
+  if (questionForm) {
+    questionForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      const question = questionInput?.value.trim();
+      if (!question) return;
+      console.log('Maya question submitted:', { question, category: selectedCategory });
+      // Future: redirect to reading page or POST to API
+      questionInput.value = '';
+    });
+  }
+
+});
+</script>
+
+</body>
+</html>

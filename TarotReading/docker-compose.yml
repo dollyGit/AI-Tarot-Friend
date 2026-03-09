@@ -1,0 +1,93 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: tarot-reading-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: tarot_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: tarot-reading-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: tarot-reading-localstack
+    environment:
+      SERVICES: s3,secretsmanager,kinesis
+      DEBUG: 1
+      DATA_DIR: /tmp/localstack/data
+    ports:
+      - '4566:4566'
+      - '4571:4571'
+    volumes:
+      - localstack_data:/tmp/localstack
+    healthcheck:
+      test: ['CMD', 'awslocal', 's3', 'ls']
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tarot-reading-grafana
+    ports:
+      - '3000:3000'
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./infra/grafana/dashboards:/etc/grafana/provisioning/dashboards
+    depends_on:
+      - prometheus
+
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tarot-reading-prometheus
+    ports:
+      - '9090:9090'
+    volumes:
+      - ./infra/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: tarot-reading-jaeger
+    ports:
+      - '6831:6831/udp'
+      - '16686:16686'
+      - '14268:14268'
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+
+volumes:
+  postgres_data:
+  redis_data:
+  localstack_data:
+  grafana_data:
+  prometheus_data:

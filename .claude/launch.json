@@ -1,0 +1,32 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "backend",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=backend"],
+      "port": 3000,
+      "cwd": "TarotReading"
+    },
+    {
+      "name": "frontend-next",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev", "--workspace=frontend"],
+      "port": 3001,
+      "cwd": "TarotReading"
+    },
+    {
+      "name": "mobile-expo",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start", "--workspace=mobile"],
+      "port": 8081,
+      "cwd": "TarotReading"
+    },
+    {
+      "name": "static-html",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "frontend", "-l", "5050"],
+      "port": 5050
+    }
+  ]
+}
